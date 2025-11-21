@@ -8,10 +8,15 @@ app.use(express.static("public"));
 
 // root route
 app.get('/', (req, res) => {
-   console.log(animeQuotes.randomQuoteByCharacter("Luffy"));
+   const quote = animeQuotes.randomQuoteByCharacter("Luffy");
+   console.log(quote);
+   res.json(quote);
 });
 
-
+// login page route
+app.get('/login', (req, res) => {
+   res.render('login');
+});
 
 app.get('/character', async (req, res) => {
 });
