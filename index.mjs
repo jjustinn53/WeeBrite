@@ -2,6 +2,7 @@ import express from 'express';
 import animeQuotes from '@kunwarji/anime-quotes';
 import mysql from 'mysql2/promise'
 import bcrypt from 'bcrypt';
+import session from 'express-session';
 
 const app = express();
 app.set("view engine", "ejs");
@@ -9,6 +10,14 @@ app.use(express.static("public"));
 
 //for Express to get values using POST method
 app.use(express.urlencoded({ extended: true }));
+
+app.set('trust proxy', 1); 
+app.use(session({
+  secret: 'keyboard cat',
+  resave: false,
+  saveUninitialized: true
+}))
+
 
 //setting up database connection pool
 const pool = mysql.createPool({
@@ -51,13 +60,34 @@ app.post('/login', async (req, res) => {
    let username = req.body.username;
    let password = req.body.password;
 
-   let passHash = "$2a$10$06ofFgXJ9wysAOzQh0D0..RcDp1w/urY3qhO6VuUJL2c6tzAJPfj6";
+   let passHash = "";
+   
+   let sql = `SELECT * 
+              FROM users
+              WHERE username = ?`
+
+   const [data] = await pool.query(sql, [username])
+   if(data.length > 0) {
+      passHash = data[0].password;
+   }
+
    const match = await bcrypt.compare(password, passHash);
    
    if(match) {
+      req.session.authenticated = true;
       res.render('home')
    } else {
       res.render('login')
+   }
+});
+
+// Squad Builder Route
+app.get('/squad', async (req, res) => {
+   console.log(req.session.authenticated);
+   if(req.session.authenticated) {
+      res.render('squad.ejs')
+   } else {
+      res.render('home')
    }
 });
 
