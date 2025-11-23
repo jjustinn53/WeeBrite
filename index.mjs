@@ -33,6 +33,11 @@ const NARUTO = ["Naruto", "Sasuke", "Itachi", "Jiraiya", "Might Guy", "Gaara", "
 const CHAINSAW = ["Himeno", "Aki Hayakawa", "Denji", "Makima", "Pochita", "Kobeni Higashiyama", "Power", "Kishibe", "Reze"]
 const BLEACH = ["Aizen Sousuke", "Ichigo Kurosaki", "Kenpachi Zaraki", "Shigekuni Yamamoto-Genryusai", "Zaraki Kenpachi", "Abarai Renji", "Kisuke Urahara", "Byakuya Kuchiki", "Mayuri Kurotsuchi", "Gin Ichimaru"]
 
+app.use((req, res, next) => {
+    res.locals.authenticated = req.session?.authenticated || false;
+    next();
+});
+
 // root route
 app.get('/', (req, res) => {
    res.render('home.ejs')
@@ -75,22 +80,34 @@ app.post('/login', async (req, res) => {
    
    if(match) {
       req.session.authenticated = true;
-      res.render('home')
+      res.render('home', { authenticated: true})
    } else {
-      res.render('login')
+      res.render('login', { authenticated: true})
    }
 });
 
+
+// Logout Route
+app.get('/logout', async (req, res) => {
+   req.session.destroy();
+   res.redirect('/');
+});
+
 // Squad Builder Route
-app.get('/squad', async (req, res) => {
-   console.log(req.session.authenticated);
-   if(req.session.authenticated) {
+app.get('/squad', isAuthenticated, async (req, res) => {
       res.render('squad.ejs')
-   } else {
-      res.render('home')
-   }
+
 });
 
 app.listen(3000, () => {
    console.log('server started');
 });
+
+//Middleware
+function isAuthenticated(req, res, next) {
+   if(!req.session.authenticated) {
+      res.redirect('login')
+   } else {
+      next();
+   }
+}
