@@ -1,11 +1,24 @@
 import express from 'express';
 import animeQuotes from '@kunwarji/anime-quotes';
-
+import mysql from 'mysql2/promise'
+import bcrypt from 'bcrypt';
 
 const app = express();
 app.set("view engine", "ejs");
 app.use(express.static("public"));
 
+//for Express to get values using POST method
+app.use(express.urlencoded({ extended: true }));
+
+//setting up database connection pool
+const pool = mysql.createPool({
+  host: "m7nj9dclezfq7ax1.cbetxkdyhwsb.us-east-1.rds.amazonaws.com",
+  user: "gre4j1gd6jvlnoii",
+  password: "wx84emrijmcvzw8j",
+  database: "lgcyr22okbejp03i",
+  connectionLimit: 10,
+  waitForConnections: true,
+});
 
 const NARUTO = ["Naruto", "Sasuke", "Itachi", "Jiraiya", "Might Guy", "Gaara", "Madara", "Kakashi", "Kiba Inuzuka", "Minato Namikaze"] 
 const CHAINSAW = ["Himeno", "Aki Hayakawa", "Denji", "Makima", "Pochita", "Kobeni Higashiyama", "Power", "Kishibe", "Reze"]
@@ -14,12 +27,38 @@ const BLEACH = ["Aizen Sousuke", "Ichigo Kurosaki", "Kenpachi Zaraki", "Shigekun
 // root route
 app.get('/', (req, res) => {
    res.render('home.ejs')
-   console.log(animeQuotes.randomQuoteByCharacter("Luffy"));
+   // console.log(animeQuotes.randomQuoteByCharacter("Luffy"));
 });
 
 
 
-app.get('/character', async (req, res) => {
+app.get('/quiz', async (req, res) => {
+   let sql = `SELECT * FROM characters ORDER BY RAND() LIMIT 1`
+   
+   const [correct] = await pool.query(sql)
+
+   let in_sql = `SELECT * FROM characters WHERE id != ? ORDER BY RAND() LIMIT 3`
+   const [incorrect] = await pool.query(in_sql, [correct.id])
+   res.render('quiz.ejs')
+});
+
+//login route
+app.get('/login', async (req, res) => {
+   res.render('login.ejs')
+});
+
+app.post('/login', async (req, res) => {
+   let username = req.body.username;
+   let password = req.body.password;
+
+   let passHash = "$2a$10$06ofFgXJ9wysAOzQh0D0..RcDp1w/urY3qhO6VuUJL2c6tzAJPfj6";
+   const match = await bcrypt.compare(password, passHash);
+   
+   if(match) {
+      res.render('home')
+   } else {
+      res.render('login')
+   }
 });
 
 app.listen(3000, () => {
