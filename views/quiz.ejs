@@ -12,6 +12,15 @@
         href="https://fonts.googleapis.com/css2?family=Boldonse&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        .correct {
+            color: green;
+        }
+        .incorrect {
+            color: red;
+        }
+    </style>
 </head>
 
 <body>
@@ -39,6 +48,7 @@
                 const answerBtns = document.querySelector(".answer-btns");
                 let currentQuestionIndex = 0;
                 let score = 0;
+                let unlocked = [];
 
                 function startQuiz() {
                     currentQuestionIndex = 0;
@@ -57,6 +67,8 @@
                     console.log(answer);
                     const button = document.createElement("button");
                     button.innerHTML = answer.name;
+                    button.dataset.name = answer.name;
+                    button.dataset.character_id = answer.character_id;
                     button.classList.add("btn");
                     answerBtns.appendChild(button);
 
@@ -64,10 +76,35 @@
                         button.dataset.correct = answer.correct;
                     }
 
-                    // button.addEventListener("click",)
+                    button.addEventListener("click", selectAnswer)
                 });
             }
 
+            function selectAnswer(e) {
+                const selectedBtn = e.target;
+                const isCorrect = selectedBtn.dataset.correct === 'true';
+                console.log(selectedBtn.dataset.name, "WHAT")
+                if(isCorrect) {
+                    selectedBtn.classList.add('correct');
+                    score++;
+
+                } else {
+                    selectedBtn.classList.add('incorrect');
+                }
+
+                Array.from(answerBtns.children).forEach(button => {
+                    if(button.dataset.correct === 'true') {
+                        button.classList.add('correct')
+                    }
+                    button.disabled = true;
+                })
+                nextBtn.style.display = 'block';
+            }
+
+            nextBtn.addEventListener("click", () => {
+                currentQuestionIndex++;
+                showQuestion();
+            })
             function resetState() {
                 nextBtn.style.display = "none";
                 while(answerBtns.firstChild) {

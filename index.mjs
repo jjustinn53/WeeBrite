@@ -130,14 +130,14 @@ app.get("/quiz", isAuthenticated, async (req, res) => {
     let [firstName] = correct[0].name.split(" ");
     let quote = animeQuotes.randomQuoteByCharacter(firstName);
     console.log("Quote:", quote);
-    let in_sql = `SELECT * FROM characters WHERE character_id != ? ORDER BY RAND() LIMIT 3`;
+    let in_sql = `SELECT * FROM characters WHERE character_id NOT IN (?) ORDER BY RAND() LIMIT 3`;
     const [incorrect] = await pool.query(in_sql, [correct[0].character_id]);
 
     let options = [
-            {name: incorrect[0].name, correct: false},
-            {name: incorrect[1].name, correct: false},
-            {name: incorrect[2].name, correct: false},
-            {name: incorrect[0].name, correct: true}
+            {name: incorrect[0].name, correct: false, character_id: incorrect[0].character_id},
+            {name: incorrect[1].name, correct: false, character_id: incorrect[1].character_id},
+            {name: incorrect[2].name, correct: false, character_id: incorrect[2].character_id},
+            {name: correct[0].name, correct: true, character_id: correct[0].character_id}
          ]
    let shuffled = _.shuffle(options)
     questions.push(
