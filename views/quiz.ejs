@@ -51,6 +51,7 @@
                 let unlocked = [];
 
                 function startQuiz() {
+                    unlocked = []
                     currentQuestionIndex = 0;
                     score = 0;
                     nextBtn.innerHTML = "Next";
@@ -83,9 +84,10 @@
             function selectAnswer(e) {
                 const selectedBtn = e.target;
                 const isCorrect = selectedBtn.dataset.correct === 'true';
-                console.log(selectedBtn.dataset.name, "WHAT")
+                
                 if(isCorrect) {
                     selectedBtn.classList.add('correct');
+                    unlocked.push({name: selectedBtn.dataset.name, character_id: selectedBtn.dataset.character_id})
                     score++;
 
                 } else {
@@ -102,14 +104,75 @@
             }
 
             nextBtn.addEventListener("click", () => {
-                currentQuestionIndex++;
-                showQuestion();
+                if(currentQuestionIndex < questions.length) {
+                    handleNextBtn();
+                } else {
+                    window.location.href = '/quiz';
+                }
             })
+
+            function handleNextBtn() {
+                currentQuestionIndex++;
+                if(currentQuestionIndex < questions.length) {
+                    showQuestion();
+                } else {
+                    gameOver();
+                }
+            }
+
+            function gameOver() {
+                resetState();
+                saveUnlockedToDB();
+
+                questionElement.innerHTML = `Congratulations you've unlocked: `;
+                
+                const unlockedDiv = document.createElement("div");
+                unlockedDiv.classList.add("unlocked-container");
+
+                for(let unlock of unlocked) {
+                    const nameElement = document.createElement("p")
+                    nameElement.textContent = unlock.name;
+                    unlockedDiv.appendChild(nameElement); 
+                }
+
+                questionElement.appendChild(unlockedDiv)
+
+                nextBtn.innerHTML = "Play Again!"
+                nextBtn.style.display = 'block';
+            }
+
+            async function saveUnlockedToDB() {
+                if (unlocked.length === 0 ) {
+                    return;
+                }
+
+                const ids = []
+                
+                for(let i = 0; i < unlocked.length; i++) {
+                    ids.push(unlocked[i].character_id)
+                }
+
+                try {
+                    console.log(ids);
+                    const res = await fetch('/quiz/unlocked', {
+                        method:'POST',
+                        headers: {
+                            'Content-Type' : 'application/json'
+                        },
+                        body: JSON.stringify({unlocked: ids})
+                    });
+                } catch (error) {
+                    console.log("Error saving unlocked characters: ", error)
+                }
+            }
+
             function resetState() {
                 nextBtn.style.display = "none";
                 while(answerBtns.firstChild) {
                     answerBtns.removeChild(answerBtns.firstChild);
                 }
+
+                questionElement.innerHTML = '';
             }
             startQuiz();
         });

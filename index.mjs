@@ -8,7 +8,7 @@ import _ from "underscore";
 const app = express();
 app.set("view engine", "ejs");
 app.use(express.static("public"));
-
+app.use(express.json());
 //for Express to get values using POST method
 app.use(express.urlencoded({ extended: true }));
 
@@ -126,10 +126,10 @@ app.get("/quiz", isAuthenticated, async (req, res) => {
               WHERE u.userID IS NULL OR u.unlocked = 0
               ORDER BY RAND() LIMIT 1`;
     const [correct] = await pool.query(cor_sql, [req.session.userID]);
-    console.log("COrrect: ", correct[0].name);
+  
     let [firstName] = correct[0].name.split(" ");
     let quote = animeQuotes.randomQuoteByCharacter(firstName);
-    console.log("Quote:", quote);
+  
     let in_sql = `SELECT * FROM characters WHERE character_id NOT IN (?) ORDER BY RAND() LIMIT 3`;
     const [incorrect] = await pool.query(in_sql, [correct[0].character_id]);
 
@@ -151,6 +151,28 @@ app.get("/quiz", isAuthenticated, async (req, res) => {
   res.render("quiz.ejs", { questions });
 });
 
+// Character Unlock Route
+app.post('/quiz/unlocked', isAuthenticated, async (req, res) => {
+   const user = req.session.userID;
+   console.log(user);
+   const { unlocked } = req.body;
+
+   if(!user || !unlocked) {
+      return res.json({ sucess: false })
+   }
+
+   try {
+      for (let character of unlocked) {
+         let sql = `INSERT INTO userUnlock(userID, character_id, unlocked)
+                  VALUES (?, ?, 1)
+                  ON DUPLICATE KEY UPDATE unlocked = 1`
+         await pool.query(sql, [user, character]);
+      }
+      console.log("Successfully saved unlocked charactesr.")
+   } catch (error) {
+      console.log("Error saving characters: ", error)
+   }
+});
 // Squad Builder Route
 app.get("/squad", isAuthenticated, async (req, res) => {
   res.render("squad.ejs");
