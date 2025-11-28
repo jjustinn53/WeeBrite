@@ -95,6 +95,9 @@ app.post("/login", async (req, res) => {
               WHERE username = ?`;
 
   const [data] = await pool.query(sql, [username]);
+// TEST DELETE AFTER:
+// const [data] = await pool.query(sql, ['admin']);
+
   if (data.length > 0) {
     passHash = data[0].password;
   }
@@ -118,15 +121,34 @@ app.get("/logout", async (req, res) => {
 
 app.get("/quiz", isAuthenticated, async (req, res) => {
   let questions = [];
+  let correctIDs = [];
   for (let i = 0; i < 5; i++) {
+   if(i > 1) {
+
+   }
     let cor_sql = `SELECT c.* 
               FROM characters c
               LEFT JOIN userUnlock u ON u.character_id = c.character_id
               AND u.userID = ?
-              WHERE u.userID IS NULL OR u.unlocked = 0
-              ORDER BY RAND() LIMIT 1`;
-    const [correct] = await pool.query(cor_sql, [req.session.userID]);
-  
+              WHERE u.userID IS NULL OR u.unlocked = 0`;
+
+   if(correctIDs.length > 0) {
+         cor_sql += ` AND c.character_id NOT IN (`
+         
+         for(let i = 0; i < correctIDs.length; i++) {
+            cor_sql += `?`;
+            
+            if(i < correctIDs.length - 1) {
+               cor_sql += `,`
+            }
+         }
+         cor_sql += `)`;
+   }
+   
+   cor_sql += ` ORDER BY RAND() LIMIT 1;`;
+    const [correct] = await pool.query(cor_sql, [req.session.userID, ...correctIDs]);
+    correctIDs.push(correct[0].character_id)
+
     let [firstName] = correct[0].name.split(" ");
     let quote = animeQuotes.randomQuoteByCharacter(firstName);
   
