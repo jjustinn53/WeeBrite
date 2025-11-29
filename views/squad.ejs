@@ -1,13 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Squad Builder</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Boldonse&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        .squad-container,
+        .unlocked-container {
+            margin-left: 10px;
+            margin-top: 10px;
+            margin-right: 10px;
+            border: solid;
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .squad-container {
+            height: 500px;
+            border: solid;
+
+
+
+        }
+
+        #squad {
+            height: 300px;
+            width: 95%;
+            border: solid;
+
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+
+        .unlocked-container {
+            height: 500px;
+        }
+
+        .unlocked, #squad {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            width: 95%;
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .unlocked {
+            overflow-x: auto;
+            scroll-behavior: smooth;
+        }
+
+        .unlocked-char, .squad-char {
+         font-family: Roboto;
+         min-width: 250px;
+         height: 300px;
+         background-color: #fff;
+         border: 1px solid #ddd;
+         border-radius: 5px;
+         display: flex;
+         flex-direction: column;
+         justify-content: center;
+         align-items: center;
+         text-align: center;
+     }
+
+     .char-img {
+         width: auto;
+         height: 200px;
+         object-fit: contain;
+         box-sizing: border-box;
+     }
+    </style>
 </head>
+
 <body>
     <%- include('partials/header.ejs') %>
 
-    SQUAD BUILDERASDSADSA
+
+        <div class="squad-container">
+            <h1>Squad:</h1>
+
+            <div id="squad">
+                <div class="squad-char"></div>
+                <div class="squad-char"></div>
+                <div class="squad-char"></div>
+                <div class="squad-char"></div>
+                <div class="squad-char"></div>
+            </div>
+        </div>
+
+        <div class="unlocked-container">
+            <h1>Unlocked Characters:</h1>
+        </div>
+
+        <script>
+
+            function displayUnlocked() {
+                const unlocked = <%- JSON.stringify(unlocked || []) %>;
+                const unlockedContainer = document.querySelector(".unlocked-container");
+                const unlockedDiv = document.createElement("div");
+                unlockedDiv.classList.add("unlocked");
+
+                for (let unlock of unlocked) {
+                    const charEl = document.createElement("div");
+                    const charImg = document.createElement("img");
+                    charImg.classList.add("char-img");
+                    charImg.src = unlock.image_url;
+                    charEl.classList.add("unlocked-char");
+                    const charName = document.createElement("p");
+                    charName.textContent = unlock.name;
+                    charEl.appendChild(charName)
+                    charEl.appendChild(charImg);
+                    unlockedDiv.appendChild(charEl);
+                }
+
+                unlockedContainer.appendChild(unlockedDiv)
+            }
+
+            displayUnlocked();
+
+        </script>
 </body>
+
 </html>

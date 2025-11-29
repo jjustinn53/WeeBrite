@@ -31,42 +31,6 @@ const pool = mysql.createPool({
   waitForConnections: true,
 });
 
-const NARUTO = [
-  "Naruto",
-  "Sasuke",
-  "Itachi",
-  "Jiraiya",
-  "Might Guy",
-  "Gaara",
-  "Madara",
-  "Kakashi",
-  "Kiba Inuzuka",
-  "Minato Namikaze",
-];
-const CHAINSAW = [
-  "Himeno",
-  "Aki Hayakawa",
-  "Denji",
-  "Makima",
-  "Pochita",
-  "Kobeni Higashiyama",
-  "Power",
-  "Kishibe",
-  "Reze",
-];
-const BLEACH = [
-  "Aizen Sousuke",
-  "Ichigo Kurosaki",
-  "Kenpachi Zaraki",
-  "Shigekuni Yamamoto-Genryusai",
-  "Zaraki Kenpachi",
-  "Abarai Renji",
-  "Kisuke Urahara",
-  "Byakuya Kuchiki",
-  "Mayuri Kurotsuchi",
-  "Gin Ichimaru",
-];
-
 // Send authenticated data to browser
 app.use((req, res, next) => {
   res.locals.authenticated = req.session?.authenticated || false;
@@ -76,7 +40,6 @@ app.use((req, res, next) => {
 // root route
 app.get("/", (req, res) => {
   res.render("home.ejs");
-  // console.log(animeQuotes.randomQuoteByCharacter("Luffy"));
 });
 
 //login route
@@ -192,7 +155,14 @@ app.post('/quiz/unlocked', isAuthenticated, async (req, res) => {
 });
 // Squad Builder Route
 app.get("/squad", isAuthenticated, async (req, res) => {
-  res.render("squad.ejs");
+   let sql = `SELECT * FROM characters c
+            LEFT JOIN userUnlock u ON c.character_id = u.character_id
+            WHERE u.userID = ?`;
+
+   const [unlocked] = await pool.query(sql, [req.session.userID]);
+   console.log('UNLOCK:', unlocked);
+
+  res.render("squad.ejs", {unlocked});
 });
 
 app.listen(3000, () => {
