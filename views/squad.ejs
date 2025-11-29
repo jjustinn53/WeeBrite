@@ -111,29 +111,87 @@
 
         <script>
 
-            function displayUnlocked() {
-                const unlocked = <%- JSON.stringify(unlocked || []) %>;
-                const unlockedContainer = document.querySelector(".unlocked-container");
-                const unlockedDiv = document.createElement("div");
-                unlockedDiv.classList.add("unlocked");
+document.addEventListener("DOMContentLoaded", () => {
+    function displayUnlocked() {
+        const unlocked = <%- JSON.stringify(unlocked || []) %>;
+        const unlockedContainer = document.querySelector(".unlocked-container");
+        const unlockedDiv = document.createElement("div");
+        unlockedDiv.classList.add("unlocked");
 
-                for (let unlock of unlocked) {
-                    const charEl = document.createElement("div");
-                    const charImg = document.createElement("img");
-                    charImg.classList.add("char-img");
-                    charImg.src = unlock.image_url;
-                    charEl.classList.add("unlocked-char");
-                    const charName = document.createElement("p");
-                    charName.textContent = unlock.name;
-                    charEl.appendChild(charName)
-                    charEl.appendChild(charImg);
-                    unlockedDiv.appendChild(charEl);
+        for (let unlock of unlocked) {
+            const charEl = document.createElement("div");
+            const charImg = document.createElement("img");
+            charImg.classList.add("char-img");
+            charImg.src = unlock.image_url;
+            charEl.classList.add("unlocked-char");
+            charEl.setAttribute("draggable", "true");
+            charEl.dataset.name = unlock.name;
+            charEl.dataset.image = unlock.image_url;
+            charEl.dataset.character_id = unlock.character_id;
+            const charName = document.createElement("p");
+            charName.textContent = unlock.name;
+            charEl.appendChild(charName);
+            charEl.appendChild(charImg);
+            unlockedDiv.appendChild(charEl);
+
+            // Add dragstart event listener
+            charEl.addEventListener("dragstart", (e) => {
+                const data = {
+                    name: unlock.name,
+                    image: unlock.image_url,
+                    character_id: unlock.character_id
                 }
+            e.dataTransfer.setData("application/json", JSON.stringify(data));
+            });
+        }
 
-                unlockedContainer.appendChild(unlockedDiv)
-            }
+        unlockedContainer.appendChild(unlockedDiv);
+    }
 
-            displayUnlocked();
+    const squad = document.getElementById("squad");
+
+    squad.addEventListener("dragover", (e) => {
+        e.preventDefault();
+    });
+
+    squad.addEventListener("drop", (e) => {
+        e.preventDefault();
+        const data = JSON.parse(e.dataTransfer.getData("application/json"));
+        console.log(data);
+
+    const squadChars = document.querySelectorAll(".squad-char");
+    //Check if character is in use
+    for(let squadChar of squadChars) {
+        const id = squadChar.dataset.characterId;
+        console.log('SQUAD CHAR: ', squadChar, "ID ", id, 'DATA.ID = ', data.character_id);
+
+        if (id == data.character_id) {
+            alert("This character alraedy exists in your squad!");
+            return;
+        }
+    }
+
+    for (let squadChar of squadChars) {
+        if (!squadChar.hasChildNodes()) {
+
+            const charImg = document.createElement("img");
+            charImg.classList.add("char-img");
+            charImg.src = data.image;
+
+            const charName = document.createElement("p");
+            charName.textContent = data.name;
+
+            squadChar.appendChild(charName);
+            squadChar.appendChild(charImg);
+            squadChar.dataset.characterId = data.character_id;
+
+            break;
+        }
+    }
+    });
+
+    displayUnlocked();
+});
 
         </script>
 </body>
