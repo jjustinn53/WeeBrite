@@ -94,20 +94,23 @@ app.post("/login", async (req, res) => {
               FROM users
               WHERE username = ?`;
 
-  const [data] = await pool.query(sql, [username]);
+//   const [data] = await pool.query(sql, [username]);
+// TEST DELETE AFTER:
+const [data] = await pool.query(sql, ['admin']);
+
   if (data.length > 0) {
     passHash = data[0].password;
   }
 
   const match = await bcrypt.compare(password, passHash);
 
-  if (match) {
+//   if (match) {
     req.session.authenticated = true;
     req.session.userID = data[0].userID;
     res.render("home", { authenticated: true });
-  } else {
-    res.render("login", { authenticated: false });
-  }
+//   } else {
+//     res.render("login", { authenticated: false });
+//   }
 });
 
 // Logout Route
@@ -118,15 +121,29 @@ app.get("/logout", async (req, res) => {
 
 app.get("/quiz", isAuthenticated, async (req, res) => {
   let questions = [];
+  let correctIDs = [];
   for (let i = 0; i < 5; i++) {
+   console.log('CORRECT IDs', correctIDs);
     let cor_sql = `SELECT c.* 
               FROM characters c
               LEFT JOIN userUnlock u ON u.character_id = c.character_id
               AND u.userID = ?
-              WHERE u.userID IS NULL OR u.unlocked = 0
-              ORDER BY RAND() LIMIT 1`;
-    const [correct] = await pool.query(cor_sql, [req.session.userID]);
-  
+              WHERE (u.userID IS NULL OR u.unlocked = 0)`;
+
+   if (correctIDs.length > 0) {
+    cor_sql += ` AND c.character_id NOT IN (${correctIDs.map(() => '?').join(',')})`;
+   }
+   
+   cor_sql += ` ORDER BY RAND() LIMIT 1;`;
+
+    const [correct] = await pool.query(cor_sql, [req.session.userID, ...correctIDs]);
+
+
+    if(correct.length == 0) {
+      break;
+    } 
+    correctIDs.push(correct[0].character_id)
+
     let [firstName] = correct[0].name.split(" ");
     let quote = animeQuotes.randomQuoteByCharacter(firstName);
   
@@ -137,7 +154,7 @@ app.get("/quiz", isAuthenticated, async (req, res) => {
             {name: incorrect[0].name, correct: false, character_id: incorrect[0].character_id},
             {name: incorrect[1].name, correct: false, character_id: incorrect[1].character_id},
             {name: incorrect[2].name, correct: false, character_id: incorrect[2].character_id},
-            {name: correct[0].name, correct: true, character_id: correct[0].character_id}
+            {name: correct[0].name, correct: true, character_id: correct[0].character_id, image: correct[0].image_url}
          ]
    let shuffled = _.shuffle(options)
     questions.push(

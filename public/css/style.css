@@ -1,6 +1,8 @@
 body {
     margin: 0;
-    font-family: Boldonse, Roboto;
+    font-family: Roboto;
+    font-weight: 1000;
+    padding-bottom: 200px;
 }
 .content {
     padding-left: 30px;

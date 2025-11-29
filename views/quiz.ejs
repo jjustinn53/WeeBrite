@@ -12,45 +12,43 @@
         href="https://fonts.googleapis.com/css2?family=Boldonse&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/quiz.css">
 
-    <style>
-        .correct {
-            color: green;
-        }
-        .incorrect {
-            color: red;
-        }
-    </style>
 </head>
 
 <body>
     <%- include('partials/header.ejs') %>
-        <!-- <form action="/submit" method="post"> -->
-        <h1>Who said this quote?</h1>
-        <h2 id="question">Question</h2>
-        <div class="answer-btns">
-            <button class="btn">Answer 1</button>
-            <button class="btn">Answer 2</button>
-            <button class="btn">Answer 3</button>
-            <button class="btn">Answer 4</button>
-        </div>
+        <div id="quiz">
+            <p id="qNum">Quote 1/5</p>
+            <h1>Who said this quote?
+            </h1>
+            <h2 id="question">Question</h2>
+            <div class="answer-btns">
+                <button class="btn">Answer 1</button>
+                <button class="btn">Answer 2</button>
+                <button class="btn">Answer 3</button>
+                <button class="btn">Answer 4</button>
+            </div>
 
-        <button id="next-btn">Next</button>
-        <!-- </form> -->
+            <button id="next-btn">Next</button>
+        </div>
 
         <script>
             const questions = <%- JSON.stringify(questions || []) %>;
-            console.log(questions);
 
             document.addEventListener("DOMContentLoaded", () => {
                 const nextBtn = document.getElementById("next-btn");
                 const questionElement = document.querySelector("#question");
                 const answerBtns = document.querySelector(".answer-btns");
+                const questionNum = document.querySelector("#qNum");
                 let currentQuestionIndex = 0;
                 let score = 0;
                 let unlocked = [];
 
                 function startQuiz() {
+                if(questions.length === 0) {
+                    gameOver();
+                }
                     unlocked = []
                     currentQuestionIndex = 0;
                     score = 0;
@@ -62,10 +60,10 @@
                 resetState();
                 let currentQuestion = questions[currentQuestionIndex];
                 let questionNo = currentQuestionIndex + 1;
-                questionElement.innerHTML = questionNo + '. ' + currentQuestion.question;
+                questionElement.innerHTML = `"${currentQuestion.question}"`;
+                questionNum.innerHTML = `Quote ${questionNo}/${questions.length}`;
 
                 currentQuestion.answers.forEach(answer => {
-                    console.log(answer);
                     const button = document.createElement("button");
                     button.innerHTML = answer.name;
                     button.dataset.name = answer.name;
@@ -75,6 +73,7 @@
 
                     if (answer.correct) {
                         button.dataset.correct = answer.correct;
+                        button.dataset.image = answer.image;
                     }
 
                     button.addEventListener("click", selectAnswer)
@@ -87,7 +86,7 @@
                 
                 if(isCorrect) {
                     selectedBtn.classList.add('correct');
-                    unlocked.push({name: selectedBtn.dataset.name, character_id: selectedBtn.dataset.character_id})
+                    unlocked.push({name: selectedBtn.dataset.name, character_id: selectedBtn.dataset.character_id, image: selectedBtn.dataset.image})
                     score++;
 
                 } else {
@@ -99,6 +98,7 @@
                         button.classList.add('correct')
                     }
                     button.disabled = true;
+                    button.classList.add('disabled');
                 })
                 nextBtn.style.display = 'block';
             }
@@ -121,6 +121,12 @@
             }
 
             function gameOver() {
+                if(questions.length == 0) {
+                    document.querySelector("h1").style.borderBottom = 'none';
+                    document.querySelector("#qNum").style.display = 'none';
+                    document.querySelector("h1").innerHTML = "Congratulations you've unlocked every character!";
+                    return;
+                } 
                 resetState();
                 saveUnlockedToDB();
 
@@ -130,9 +136,16 @@
                 unlockedDiv.classList.add("unlocked-container");
 
                 for(let unlock of unlocked) {
-                    const nameElement = document.createElement("p")
-                    nameElement.textContent = unlock.name;
-                    unlockedDiv.appendChild(nameElement); 
+                    const charEl = document.createElement("div");
+                    const charImg = document.createElement("img");
+                    charImg.classList.add("char-img");
+                    charImg.src = unlock.image;
+                    charEl.classList.add("unlocked-char");
+                    const charName = document.createElement("p");
+                    charName.textContent = unlock.name;
+                    charEl.appendChild(charName)
+                    charEl.appendChild(charImg);
+                    unlockedDiv.appendChild(charEl); 
                 }
 
                 questionElement.appendChild(unlockedDiv)
@@ -153,7 +166,6 @@
                 }
 
                 try {
-                    console.log(ids);
                     const res = await fetch('/quiz/unlocked', {
                         method:'POST',
                         headers: {
