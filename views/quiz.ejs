@@ -13,12 +13,93 @@
         rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 
-    <style>
+    <style>        
+        #quiz {
+            width: 600px;
+            height: 40%;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.8);
+            border-radius: 25px;
+            align-self: center;
+            margin: 100px auto 0;
+            padding: 20px;
+
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            border-bottom: solid;
+            padding-bottom: 30px;
+        }
+
+        .answer-btns {
+            display: flex;
+            flex-direction: column;
+            row-gap: 5px;
+            
+        }
+
+        .btn {
+            height: 50px;
+            font-family: Boldonse;
+            border-radius: 5px;
+            border-color: rgba(0,0,0,0.1);
+            background-color: white;
+        }
+
         .correct {
-            color: green;
+            background-color: rgba(0, 128, 0, 0.7);
         }
         .incorrect {
-            color: red;
+            background-color: rgba(255, 0, 0, 0.7);
+        }
+
+        .btn:hover:not(.correct):not(.incorrect) {
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        .btn.disabled:hover:not(.correct):not(.incorrect){
+            background-color: initial; /* Reset the hover background color */
+            cursor: not-allowed; /* Optional: Show a "not-allowed" cursor */
+        }
+
+        #next-btn {
+            width: auto;
+            height: 30px;
+            font-size: 15px;
+            font-family: Roboto;
+
+            background-color: white;
+            margin-top: 10px;
+            align-self: center;
+            cursor: pointer;
+
+            transition: background-color 0.2s, color 0.15s;
+        }
+
+        #next-btn:hover {
+            background-color: rgb(0,0,0);
+            color: white;
+        }
+        
+        #question {
+            margin-top: 0px;
+            font-size: 20px;
+            font-weight: 400;
+        }
+
+        .unlocked-container {
+            padding: 15px;
+            border: solid;
+            display: flex;
+            flex-direction: row;
+            column-gap: 10px;
+        }
+
+        .unlocked-char {
+            border: solid;
+            width: 200px;
+            height: 400px;
         }
     </style>
 </head>
@@ -26,16 +107,20 @@
 <body>
     <%- include('partials/header.ejs') %>
         <!-- <form action="/submit" method="post"> -->
-        <h1>Who said this quote?</h1>
-        <h2 id="question">Question</h2>
-        <div class="answer-btns">
-            <button class="btn">Answer 1</button>
-            <button class="btn">Answer 2</button>
-            <button class="btn">Answer 3</button>
-            <button class="btn">Answer 4</button>
-        </div>
+        <div id="quiz">
+            <p id="qNum">Quote 1/5</p>
+            <h1>Who said this quote?
+            </h1>
+            <h2 id="question">Question</h2>
+            <div class="answer-btns">
+                <button class="btn">Answer 1</button>
+                <button class="btn">Answer 2</button>
+                <button class="btn">Answer 3</button>
+                <button class="btn">Answer 4</button>
+            </div>
 
-        <button id="next-btn">Next</button>
+            <button id="next-btn">Next</button>
+        </div>
         <!-- </form> -->
 
         <script>
@@ -46,11 +131,15 @@
                 const nextBtn = document.getElementById("next-btn");
                 const questionElement = document.querySelector("#question");
                 const answerBtns = document.querySelector(".answer-btns");
+                const questionNum = document.querySelector("#qNum");
                 let currentQuestionIndex = 0;
                 let score = 0;
                 let unlocked = [];
 
                 function startQuiz() {
+                if(questions.length === 0) {
+                    gameOver();
+                }
                     unlocked = []
                     currentQuestionIndex = 0;
                     score = 0;
@@ -62,7 +151,8 @@
                 resetState();
                 let currentQuestion = questions[currentQuestionIndex];
                 let questionNo = currentQuestionIndex + 1;
-                questionElement.innerHTML = questionNo + '. ' + currentQuestion.question;
+                questionElement.innerHTML = `"${currentQuestion.question}"`;
+                questionNum.innerHTML = `Quote ${questionNo}/${questions.length}`;
 
                 currentQuestion.answers.forEach(answer => {
                     console.log(answer);
@@ -99,6 +189,7 @@
                         button.classList.add('correct')
                     }
                     button.disabled = true;
+                    button.classList.add('disabled');
                 })
                 nextBtn.style.display = 'block';
             }
@@ -121,6 +212,12 @@
             }
 
             function gameOver() {
+                if(questions.length == 0) {
+                    document.querySelector("h1").style.borderBottom = 'none';
+                    document.querySelector("#qNum").style.display = 'none';
+                    document.querySelector("h1").innerHTML = "Congratulations you've unlocked every character!";
+                    return;
+                } 
                 resetState();
                 saveUnlockedToDB();
 
@@ -132,6 +229,7 @@
                 for(let unlock of unlocked) {
                     const nameElement = document.createElement("p")
                     nameElement.textContent = unlock.name;
+                    nameElement.classList.add('unlocked-char');
                     unlockedDiv.appendChild(nameElement); 
                 }
 
