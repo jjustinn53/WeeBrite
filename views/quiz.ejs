@@ -12,101 +12,12 @@
         href="https://fonts.googleapis.com/css2?family=Boldonse&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/quiz.css">
 
-    <style>        
-        #quiz {
-            width: 600px;
-            height: 40%;
-            box-shadow: 0px 0px 10px rgba(0,0,0,0.8);
-            border-radius: 25px;
-            align-self: center;
-            margin: 100px auto 0;
-            padding: 20px;
-
-            display: flex;
-            flex-direction: column;
-        }
-
-        h1 {
-            border-bottom: solid;
-            padding-bottom: 30px;
-        }
-
-        .answer-btns {
-            display: flex;
-            flex-direction: column;
-            row-gap: 5px;
-            
-        }
-
-        .btn {
-            height: 50px;
-            font-family: Boldonse;
-            border-radius: 5px;
-            border-color: rgba(0,0,0,0.1);
-            background-color: white;
-        }
-
-        .correct {
-            background-color: rgba(0, 128, 0, 0.7);
-        }
-        .incorrect {
-            background-color: rgba(255, 0, 0, 0.7);
-        }
-
-        .btn:hover:not(.correct):not(.incorrect) {
-            background-color: rgba(0,0,0,0.1);
-        }
-
-        .btn.disabled:hover:not(.correct):not(.incorrect){
-            background-color: initial; /* Reset the hover background color */
-            cursor: not-allowed; /* Optional: Show a "not-allowed" cursor */
-        }
-
-        #next-btn {
-            width: auto;
-            height: 30px;
-            font-size: 15px;
-            font-family: Roboto;
-
-            background-color: white;
-            margin-top: 10px;
-            align-self: center;
-            cursor: pointer;
-
-            transition: background-color 0.2s, color 0.15s;
-        }
-
-        #next-btn:hover {
-            background-color: rgb(0,0,0);
-            color: white;
-        }
-        
-        #question {
-            margin-top: 0px;
-            font-size: 20px;
-            font-weight: 400;
-        }
-
-        .unlocked-container {
-            padding: 15px;
-            border: solid;
-            display: flex;
-            flex-direction: row;
-            column-gap: 10px;
-        }
-
-        .unlocked-char {
-            border: solid;
-            width: 200px;
-            height: 400px;
-        }
-    </style>
 </head>
 
 <body>
     <%- include('partials/header.ejs') %>
-        <!-- <form action="/submit" method="post"> -->
         <div id="quiz">
             <p id="qNum">Quote 1/5</p>
             <h1>Who said this quote?
@@ -121,11 +32,9 @@
 
             <button id="next-btn">Next</button>
         </div>
-        <!-- </form> -->
 
         <script>
             const questions = <%- JSON.stringify(questions || []) %>;
-            console.log(questions);
 
             document.addEventListener("DOMContentLoaded", () => {
                 const nextBtn = document.getElementById("next-btn");
@@ -155,7 +64,6 @@
                 questionNum.innerHTML = `Quote ${questionNo}/${questions.length}`;
 
                 currentQuestion.answers.forEach(answer => {
-                    console.log(answer);
                     const button = document.createElement("button");
                     button.innerHTML = answer.name;
                     button.dataset.name = answer.name;
@@ -165,6 +73,7 @@
 
                     if (answer.correct) {
                         button.dataset.correct = answer.correct;
+                        button.dataset.image = answer.image;
                     }
 
                     button.addEventListener("click", selectAnswer)
@@ -177,7 +86,7 @@
                 
                 if(isCorrect) {
                     selectedBtn.classList.add('correct');
-                    unlocked.push({name: selectedBtn.dataset.name, character_id: selectedBtn.dataset.character_id})
+                    unlocked.push({name: selectedBtn.dataset.name, character_id: selectedBtn.dataset.character_id, image: selectedBtn.dataset.image})
                     score++;
 
                 } else {
@@ -227,10 +136,16 @@
                 unlockedDiv.classList.add("unlocked-container");
 
                 for(let unlock of unlocked) {
-                    const nameElement = document.createElement("p")
-                    nameElement.textContent = unlock.name;
-                    nameElement.classList.add('unlocked-char');
-                    unlockedDiv.appendChild(nameElement); 
+                    const charEl = document.createElement("div");
+                    const charImg = document.createElement("img");
+                    charImg.classList.add("char-img");
+                    charImg.src = unlock.image;
+                    charEl.classList.add("unlocked-char");
+                    const charName = document.createElement("p");
+                    charName.textContent = unlock.name;
+                    charEl.appendChild(charName)
+                    charEl.appendChild(charImg);
+                    unlockedDiv.appendChild(charEl); 
                 }
 
                 questionElement.appendChild(unlockedDiv)
@@ -251,7 +166,6 @@
                 }
 
                 try {
-                    console.log(ids);
                     const res = await fetch('/quiz/unlocked', {
                         method:'POST',
                         headers: {

@@ -154,7 +154,7 @@ app.get("/quiz", isAuthenticated, async (req, res) => {
             {name: incorrect[0].name, correct: false, character_id: incorrect[0].character_id},
             {name: incorrect[1].name, correct: false, character_id: incorrect[1].character_id},
             {name: incorrect[2].name, correct: false, character_id: incorrect[2].character_id},
-            {name: correct[0].name, correct: true, character_id: correct[0].character_id}
+            {name: correct[0].name, correct: true, character_id: correct[0].character_id, image: correct[0].image_url}
          ]
    let shuffled = _.shuffle(options)
     questions.push(
