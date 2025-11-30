@@ -57,9 +57,7 @@ app.post("/login", async (req, res) => {
               FROM users
               WHERE username = ?`;
 
-//   const [data] = await pool.query(sql, [username]);
-// TEST DELETE AFTER:
-const [data] = await pool.query(sql, ['admin']);
+  const [data] = await pool.query(sql, [username]);
 
   if (data.length > 0) {
     passHash = data[0].password;
@@ -67,13 +65,13 @@ const [data] = await pool.query(sql, ['admin']);
 
   const match = await bcrypt.compare(password, passHash);
 
-//   if (match) {
+  if (match) {
     req.session.authenticated = true;
     req.session.userID = data[0].userID;
     res.render("home", { authenticated: true });
-//   } else {
-//     res.render("login", { authenticated: false });
-//   }
+  } else {
+    res.render("login", { message: "Invalid username or password." });
+  }
 });
 
 // Logout Route
@@ -86,7 +84,6 @@ app.get("/quiz", isAuthenticated, async (req, res) => {
   let questions = [];
   let correctIDs = [];
   for (let i = 0; i < 5; i++) {
-   console.log('CORRECT IDs', correctIDs);
     let cor_sql = `SELECT c.* 
               FROM characters c
               LEFT JOIN userUnlock u ON u.character_id = c.character_id
@@ -134,7 +131,6 @@ app.get("/quiz", isAuthenticated, async (req, res) => {
 // Character Unlock Route
 app.post('/quiz/unlocked', isAuthenticated, async (req, res) => {
    const user = req.session.userID;
-   console.log(user);
    const { unlocked } = req.body;
 
    if(!user || !unlocked) {
@@ -153,6 +149,7 @@ app.post('/quiz/unlocked', isAuthenticated, async (req, res) => {
       console.log("Error saving characters: ", error)
    }
 });
+
 // Squad Builder Route
 app.get("/squad", isAuthenticated, async (req, res) => {
    let sql = `SELECT * FROM characters c
@@ -160,13 +157,49 @@ app.get("/squad", isAuthenticated, async (req, res) => {
             WHERE u.userID = ?`;
 
    const [unlocked] = await pool.query(sql, [req.session.userID]);
+
+   let squad_sql = `SELECT * FROM characters c
+            INNER JOIN squad s ON s.character_id = c.character_id
+            WHERE s.userID = ?` 
+   const [cur_squad] = await pool.query(squad_sql, [req.session.userID])
+
    console.log('UNLOCK:', unlocked);
 
-  res.render("squad.ejs", {unlocked});
+  res.render("squad.ejs", {unlocked, cur_squad});
 });
 
 app.listen(3000, () => {
   console.log("server started");
+});
+
+// Character Save Route
+app.post('/squad/save', isAuthenticated, async (req, res) => {
+   const user = req.session.userID;
+   console.log(user);
+   const { squad } = req.body;
+
+
+   if(!user || !squad) {
+      return res.json({ sucess: false })
+   }
+
+   try {
+
+      if(squad.length > 0) {
+         await pool.query(`DELETE FROM squad WHERE userID = ? AND character_id NOT IN (${squad.map(() => '?').join(',')})`, [user, ...squad])
+      
+         const values = squad.map((characterId) => [user, characterId]);
+         let sql = `INSERT IGNORE INTO squad(userID, character_id)
+                  VALUES ?`
+         await pool.query(sql, [values]);
+      } else {
+         await pool.query(`DELETE FROM squad WHERE userID = ?`, [user]);
+      }
+
+      console.log("Successfully saved squad.")
+   } catch (error) {
+      console.log("Error saving squad: ", error)
+   }
 });
 
 //Middleware
@@ -175,7 +208,7 @@ function isAuthenticated(req, res, next) {
     if (req.url !== "/login") {
       res.render("login", { message: "Please login to continue." });
     } else {
-      res.render("login", { message: "asd" });
+      res.render("login", { message: "" });
     }
   } else {
     next();

@@ -86,6 +86,25 @@
          object-fit: contain;
          box-sizing: border-box;
      }
+
+     #save {
+        margin-top: 20px;
+        width: 100px;
+        height: 50px;
+        background-color: white;
+        border: solid;
+        transition: transform 1s;
+        cursor: pointer;
+     }
+
+     #save:hover {
+        transform: scale(1.01);
+        box-shadow: 0 0 5px rgba(0,0,0,0.5);
+     }
+
+     .cancel:hover {
+        background-color: rgba(255,0 ,0, 0.5);
+     }
     </style>
 </head>
 
@@ -103,6 +122,8 @@
                 <div class="squad-char"></div>
                 <div class="squad-char"></div>
             </div>
+
+            <button id="save">Save Squad</button>
         </div>
 
         <div class="unlocked-container">
@@ -112,11 +133,72 @@
         <script>
 
 document.addEventListener("DOMContentLoaded", () => {
+
+    function displayCurrentSquad() {
+        const cur_squad = <%- JSON.stringify(cur_squad || []) %>;
+        const squadChars = document.querySelectorAll('.squad-char');
+        
+        for(let i = 0; i < cur_squad.length; i++) {
+        if (!cur_squad || cur_squad.length === 0) {
+            return;
+        }
+        
+        if (!squadChars[i].hasChildNodes()) {
+            const charImg = document.createElement("img");
+            charImg.classList.add("char-img");
+            charImg.src = cur_squad[i].image_url;
+
+            const charName = document.createElement("p");
+            charName.textContent = cur_squad[i].name;
+
+            squadChars[i].appendChild(charName);
+            squadChars[i].appendChild(charImg);
+            squadChars[i].dataset.characterId = cur_squad[i].character_id;
+            squadChars[i].classList.add("cancel")
+        }
+    }
+
+    }
     function displayUnlocked() {
         const unlocked = <%- JSON.stringify(unlocked || []) %>;
         const unlockedContainer = document.querySelector(".unlocked-container");
         const unlockedDiv = document.createElement("div");
         unlockedDiv.classList.add("unlocked");
+
+        const squad = [];
+        const save = document.querySelector('#save');
+        save.addEventListener("click", () => {
+            const squadChars = document.querySelectorAll(".squad-char");
+
+            for(let char of squadChars) {
+                const characterId = char.dataset.characterId;
+                if(characterId !== undefined && !squad.includes(characterId)) {
+                    squad.push(characterId);
+                    console.log(characterId);
+                }
+            }
+
+            console.log(squad);
+            
+            fetch("/squad/save", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ squad })
+            });
+        });
+
+        const squadChars = document.querySelectorAll(".squad-char");
+        squadChars.forEach((squadChar) => {
+            squadChar.addEventListener("click", () => {
+                squadChar.innerHTML = "";
+                squadChar.classList.remove("cancel");
+                const index = squad.indexOf(squadChar.dataset.characterId);
+                delete squadChar.dataset.characterId;
+                squad.splice(index, 1);
+            })
+        })
 
         for (let unlock of unlocked) {
             const charEl = document.createElement("div");
@@ -163,7 +245,6 @@ document.addEventListener("DOMContentLoaded", () => {
     //Check if character is in use
     for(let squadChar of squadChars) {
         const id = squadChar.dataset.characterId;
-        console.log('SQUAD CHAR: ', squadChar, "ID ", id, 'DATA.ID = ', data.character_id);
 
         if (id == data.character_id) {
             alert("This character alraedy exists in your squad!");
@@ -184,12 +265,12 @@ document.addEventListener("DOMContentLoaded", () => {
             squadChar.appendChild(charName);
             squadChar.appendChild(charImg);
             squadChar.dataset.characterId = data.character_id;
-
+            squadChar.classList.add("cancel")
             break;
         }
     }
     });
-
+    displayCurrentSquad();
     displayUnlocked();
 });
 
