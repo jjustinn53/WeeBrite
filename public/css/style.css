@@ -28,6 +28,19 @@ header {
     height: 100px;
 }
 
+.loginDiv{
+position:relative;
+display:inline-block;
+}
+
+.loginIcon {
+position:absolute;
+right:5px;
+top:3px;
+cursor:pointer;
+}
+
+
 
 
 
