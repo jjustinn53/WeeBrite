@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Squad Builder</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Boldonse&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        .squad-container,
+        .unlocked-container {
+            margin-left: 10px;
+            margin-top: 10px;
+            margin-right: 10px;
+            border: solid;
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .squad-container {
+            height: 500px;
+            border: solid;
+
+
+
+        }
+
+        #squad {
+            height: 300px;
+            width: 95%;
+            border: solid;
+
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+
+        .unlocked-container {
+            height: 500px;
+        }
+
+        .unlocked, #squad {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            width: 95%;
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .unlocked {
+            overflow-x: auto;
+            scroll-behavior: smooth;
+        }
+
+        .unlocked-char, .squad-char {
+         font-family: Roboto;
+         min-width: 250px;
+         height: 300px;
+         background-color: #fff;
+         border: 1px solid #ddd;
+         border-radius: 5px;
+         display: flex;
+         flex-direction: column;
+         justify-content: center;
+         align-items: center;
+         text-align: center;
+     }
+
+     .char-img {
+         width: auto;
+         height: 200px;
+         object-fit: contain;
+         box-sizing: border-box;
+     }
+
+     #save {
+        margin-top: 20px;
+        width: 100px;
+        height: 50px;
+        background-color: white;
+        border: solid;
+        transition: transform 1s;
+        cursor: pointer;
+     }
+
+     #save:hover {
+        transform: scale(1.01);
+        box-shadow: 0 0 5px rgba(0,0,0,0.5);
+     }
+
+     .cancel:hover {
+        background-color: rgba(255,0 ,0, 0.5);
+     }
+    </style>
+</head>
+
+<body>
+    <%- include('partials/header.ejs') %>
+
+
+        <div class="squad-container">
+            <h1>Squad:</h1>
+
+            <div id="squad">
+                <div class="squad-char"></div>
+                <div class="squad-char"></div>
+                <div class="squad-char"></div>
+                <div class="squad-char"></div>
+                <div class="squad-char"></div>
+            </div>
+
+            <button id="save">Save Squad</button>
+        </div>
+
+        <div class="unlocked-container">
+            <h1>Unlocked Characters:</h1>
+        </div>
+
+        <script>
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    function displayCurrentSquad() {
+        const cur_squad = <%- JSON.stringify(cur_squad || []) %>;
+        const squadChars = document.querySelectorAll('.squad-char');
+        
+        for(let i = 0; i < cur_squad.length; i++) {
+        if (!cur_squad || cur_squad.length === 0) {
+            return;
+        }
+        
+        if (!squadChars[i].hasChildNodes()) {
+            const charImg = document.createElement("img");
+            charImg.classList.add("char-img");
+            charImg.src = cur_squad[i].image_url;
+
+            const charName = document.createElement("p");
+            charName.textContent = cur_squad[i].name;
+
+            squadChars[i].appendChild(charName);
+            squadChars[i].appendChild(charImg);
+            squadChars[i].dataset.characterId = cur_squad[i].character_id;
+            squadChars[i].classList.add("cancel")
+        }
+    }
+
+    }
+    function displayUnlocked() {
+        const unlocked = <%- JSON.stringify(unlocked || []) %>;
+        const unlockedContainer = document.querySelector(".unlocked-container");
+        const unlockedDiv = document.createElement("div");
+        unlockedDiv.classList.add("unlocked");
+
+        const squad = [];
+        const save = document.querySelector('#save');
+        save.addEventListener("click", () => {
+            const squadChars = document.querySelectorAll(".squad-char");
+
+            for(let char of squadChars) {
+                const characterId = char.dataset.characterId;
+                if(characterId !== undefined && !squad.includes(characterId)) {
+                    squad.push(characterId);
+                    console.log(characterId);
+                }
+            }
+
+            console.log(squad);
+            
+            fetch("/squad/save", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ squad })
+            });
+        });
+
+        const squadChars = document.querySelectorAll(".squad-char");
+        squadChars.forEach((squadChar) => {
+            squadChar.addEventListener("click", () => {
+                squadChar.innerHTML = "";
+                squadChar.classList.remove("cancel");
+                const index = squad.indexOf(squadChar.dataset.characterId);
+                delete squadChar.dataset.characterId;
+                squad.splice(index, 1);
+            })
+        })
+
+        for (let unlock of unlocked) {
+            const charEl = document.createElement("div");
+            const charImg = document.createElement("img");
+            charImg.classList.add("char-img");
+            charImg.src = unlock.image_url;
+            charEl.classList.add("unlocked-char");
+            charEl.setAttribute("draggable", "true");
+            charEl.dataset.name = unlock.name;
+            charEl.dataset.image = unlock.image_url;
+            charEl.dataset.character_id = unlock.character_id;
+            const charName = document.createElement("p");
+            charName.textContent = unlock.name;
+            charEl.appendChild(charName);
+            charEl.appendChild(charImg);
+            unlockedDiv.appendChild(charEl);
+
+            // Add dragstart event listener
+            charEl.addEventListener("dragstart", (e) => {
+                const data = {
+                    name: unlock.name,
+                    image: unlock.image_url,
+                    character_id: unlock.character_id
+                }
+            e.dataTransfer.setData("application/json", JSON.stringify(data));
+            });
+        }
+
+        unlockedContainer.appendChild(unlockedDiv);
+    }
+
+    const squad = document.getElementById("squad");
+
+    squad.addEventListener("dragover", (e) => {
+        e.preventDefault();
+    });
+
+    squad.addEventListener("drop", (e) => {
+        e.preventDefault();
+        const data = JSON.parse(e.dataTransfer.getData("application/json"));
+        console.log(data);
+
+    const squadChars = document.querySelectorAll(".squad-char");
+    //Check if character is in use
+    for(let squadChar of squadChars) {
+        const id = squadChar.dataset.characterId;
+
+        if (id == data.character_id) {
+            alert("This character alraedy exists in your squad!");
+            return;
+        }
+    }
+
+    for (let squadChar of squadChars) {
+        if (!squadChar.hasChildNodes()) {
+
+            const charImg = document.createElement("img");
+            charImg.classList.add("char-img");
+            charImg.src = data.image;
+
+            const charName = document.createElement("p");
+            charName.textContent = data.name;
+
+            squadChar.appendChild(charName);
+            squadChar.appendChild(charImg);
+            squadChar.dataset.characterId = data.character_id;
+            squadChar.classList.add("cancel")
+            break;
+        }
+    }
+    });
+    displayCurrentSquad();
+    displayUnlocked();
+});
+
+        </script>
+</body>
+
+</html>

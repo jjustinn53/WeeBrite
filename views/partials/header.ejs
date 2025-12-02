@@ -1,0 +1,19 @@
+    <header class="content">
+        <div class="left-section">
+            <a href="/">
+                <img src="/images/WeeBrite.png" width="225px" alt="Logo">
+            </a>
+        </div>
+
+        <nav class="right-section">
+            <a href="/" class="nav-button">Home</a>
+            <a href="/quiz" class="nav-button">Play</a>
+            <a href="/squad" class="nav-button">Squad Builder</a>
+            <% if (!authenticated) { %>
+                <a href="/login" class="nav-button">Login</a>
+            <% } else { %>
+                <a href="/logout" class="nav-button">Logout</a>
+            <% } %>
+        </nav>
+
+    </header>
