@@ -1,0 +1,112 @@
+     #quiz {
+         width: 600px;
+         height: 40%;
+         box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.8);
+         border-radius: 25px;
+         align-self: center;
+         margin: 100px auto 0;
+         padding: 20px;
+
+         display: flex;
+         flex-direction: column;
+     }
+
+     h1 {
+         border-bottom: solid;
+         padding-bottom: 30px;
+     }
+
+     .answer-btns {
+         display: flex;
+         flex-direction: column;
+         row-gap: 5px;
+
+     }
+
+     .btn {
+         height: 50px;
+         font-family: Boldonse;
+         border-radius: 5px;
+         border-color: rgba(0, 0, 0, 0.1);
+         background-color: white;
+     }
+
+     .correct {
+         background-color: rgba(0, 128, 0, 0.7);
+     }
+
+     .incorrect {
+         background-color: rgba(255, 0, 0, 0.7);
+     }
+
+     .btn:hover:not(.correct):not(.incorrect) {
+         background-color: rgba(0, 0, 0, 0.1);
+     }
+
+     .btn.disabled:hover:not(.correct):not(.incorrect) {
+         background-color: initial;
+         /* Reset the hover background color */
+         cursor: not-allowed;
+         /* Optional: Show a "not-allowed" cursor */
+     }
+
+     #next-btn {
+         width: auto;
+         height: 30px;
+         font-size: 15px;
+         font-family: Roboto;
+
+         background-color: white;
+         margin-top: 10px;
+         align-self: center;
+         cursor: pointer;
+
+         transition: background-color 0.2s, color 0.15s;
+     }
+
+     #next-btn:hover {
+         background-color: rgb(0, 0, 0);
+         color: white;
+     }
+
+     #question {
+         margin-top: 0px;
+         font-size: 20px;
+         font-weight: 400;
+     }
+
+     .unlocked-container {
+         display: flex;
+         flex-direction: row;
+         gap: 10px;
+         overflow-x: auto;
+         width: 95%;
+         margin-top: 10px;
+         padding: 10px;
+         border: 1px solid #ccc;
+         border-radius: 5px;
+         background-color: #f9f9f9;
+         scroll-behavior: smooth;
+     }
+
+
+     .unlocked-char {
+         font-family: Roboto;
+         min-width: 250px;
+         height: 300px;
+         background-color: #fff;
+         border: 1px solid #ddd;
+         border-radius: 5px;
+         display: flex;
+         flex-direction: column;
+         justify-content: center;
+         align-items: center;
+         text-align: center;
+     }
+
+     .char-img {
+         width: auto;
+         height: 200px;
+         object-fit: contain;
+         box-sizing: border-box;
+     }

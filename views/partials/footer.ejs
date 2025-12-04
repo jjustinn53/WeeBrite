@@ -1,0 +1,18 @@
+<footer class="bg-dark text-light mt-5 pt-4 pb-3">
+    <div class="container text-center">
+
+        <p class="mb-1">
+            &copy; <%= new Date().getFullYear() %> Weebrite. All rights reserved.
+        </p>
+
+        <ul class="list-inline mb-2">
+            <li class="list-inline-item"><a href="/" class="text-decoration-none text-light">Home</a></li>
+        </ul>
+
+        <% if (typeof footerNote !== "undefined") { %>
+            <p class="small text-secondary mb-0"><%= footerNote %></p>
+        <% } %>
+
+    </div>
+</footer>
+

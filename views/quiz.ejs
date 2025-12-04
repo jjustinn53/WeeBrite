@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Play</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Boldonse&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/quiz.css">
+
+</head>
+
+<body>
+    <%- include('partials/header.ejs') %>
+        <div id="quiz">
+            <p id="qNum">Quote 1/5</p>
+            <h1>Who said this quote?
+            </h1>
+            <h2 id="question">Question</h2>
+            <div class="answer-btns">
+                <button class="btn">Answer 1</button>
+                <button class="btn">Answer 2</button>
+                <button class="btn">Answer 3</button>
+                <button class="btn">Answer 4</button>
+            </div>
+
+            <button id="next-btn">Next</button>
+        </div>
+
+        <script>
+            const questions = <%- JSON.stringify(questions || []) %>;
+
+            document.addEventListener("DOMContentLoaded", () => {
+                const nextBtn = document.getElementById("next-btn");
+                const questionElement = document.querySelector("#question");
+                const answerBtns = document.querySelector(".answer-btns");
+                const questionNum = document.querySelector("#qNum");
+                let currentQuestionIndex = 0;
+                let score = 0;
+                let unlocked = [];
+
+                function startQuiz() {
+                if(questions.length === 0) {
+                    gameOver();
+                }
+                    unlocked = []
+                    currentQuestionIndex = 0;
+                    score = 0;
+                    nextBtn.innerHTML = "Next";
+                    showQuestion();
+                }
+    
+            function showQuestion() {
+                resetState();
+                let currentQuestion = questions[currentQuestionIndex];
+                let questionNo = currentQuestionIndex + 1;
+                questionElement.innerHTML = `"${currentQuestion.question}"`;
+                questionNum.innerHTML = `Quote ${questionNo}/${questions.length}`;
+
+                currentQuestion.answers.forEach(answer => {
+                    const button = document.createElement("button");
+                    button.innerHTML = answer.name;
+                    button.dataset.name = answer.name;
+                    button.dataset.character_id = answer.character_id;
+                    button.classList.add("btn");
+                    answerBtns.appendChild(button);
+
+                    if (answer.correct) {
+                        button.dataset.correct = answer.correct;
+                        button.dataset.image = answer.image;
+                    }
+
+                    button.addEventListener("click", selectAnswer)
+                });
+            }
+
+            function selectAnswer(e) {
+                const selectedBtn = e.target;
+                const isCorrect = selectedBtn.dataset.correct === 'true';
+                
+                if(isCorrect) {
+                    selectedBtn.classList.add('correct');
+                    unlocked.push({name: selectedBtn.dataset.name, character_id: selectedBtn.dataset.character_id, image: selectedBtn.dataset.image})
+                    score++;
+
+                } else {
+                    selectedBtn.classList.add('incorrect');
+                }
+
+                Array.from(answerBtns.children).forEach(button => {
+                    if(button.dataset.correct === 'true') {
+                        button.classList.add('correct')
+                    }
+                    button.disabled = true;
+                    button.classList.add('disabled');
+                })
+                nextBtn.style.display = 'block';
+            }
+
+            nextBtn.addEventListener("click", () => {
+                if(currentQuestionIndex < questions.length) {
+                    handleNextBtn();
+                } else {
+                    window.location.href = '/quiz';
+                }
+            })
+
+            function handleNextBtn() {
+                currentQuestionIndex++;
+                if(currentQuestionIndex < questions.length) {
+                    showQuestion();
+                } else {
+                    gameOver();
+                }
+            }
+
+            function gameOver() {
+                if(questions.length == 0) {
+                    document.querySelector("h1").style.borderBottom = 'none';
+                    document.querySelector("#qNum").style.display = 'none';
+                    document.querySelector("h1").innerHTML = "Congratulations you've unlocked every character!";
+                    return;
+                } 
+                resetState();
+                saveUnlockedToDB();
+
+                questionElement.innerHTML = `Congratulations you've unlocked: `;
+                
+                const unlockedDiv = document.createElement("div");
+                unlockedDiv.classList.add("unlocked-container");
+
+                for(let unlock of unlocked) {
+                    const charEl = document.createElement("div");
+                    const charImg = document.createElement("img");
+                    charImg.classList.add("char-img");
+                    charImg.src = unlock.image;
+                    charEl.classList.add("unlocked-char");
+                    const charName = document.createElement("p");
+                    charName.textContent = unlock.name;
+                    charEl.appendChild(charName)
+                    charEl.appendChild(charImg);
+                    unlockedDiv.appendChild(charEl); 
+                }
+
+                questionElement.appendChild(unlockedDiv)
+
+                nextBtn.innerHTML = "Play Again!"
+                nextBtn.style.display = 'block';
+            }
+
+            async function saveUnlockedToDB() {
+                if (unlocked.length === 0 ) {
+                    return;
+                }
+
+                const ids = []
+                
+                for(let i = 0; i < unlocked.length; i++) {
+                    ids.push(unlocked[i].character_id)
+                }
+
+                try {
+                    const res = await fetch('/quiz/unlocked', {
+                        method:'POST',
+                        headers: {
+                            'Content-Type' : 'application/json'
+                        },
+                        body: JSON.stringify({unlocked: ids})
+                    });
+                } catch (error) {
+                    console.log("Error saving unlocked characters: ", error)
+                }
+            }
+
+            function resetState() {
+                nextBtn.style.display = "none";
+                while(answerBtns.firstChild) {
+                    answerBtns.removeChild(answerBtns.firstChild);
+                }
+
+                questionElement.innerHTML = '';
+            }
+            startQuiz();
+        });
+        </script>
+        <%- include("partials/footer") %>
+</body>
+
+</html>

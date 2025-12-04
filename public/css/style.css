@@ -1,0 +1,46 @@
+body {
+    margin: 0;
+    font-family: Roboto;
+    font-weight: 1000;
+    padding-bottom: 200px;
+}
+.content {
+    padding-left: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    background-color: rgb(243, 108, 33);
+}
+
+.logo {
+    width: 100px;
+}
+
+.nav-button {
+    font-size: 17px;
+    text-decoration: none;
+    margin-right: 30px;
+    color: white;
+}
+
+header {
+    height: 100px;
+}
+
+.loginDiv{
+position:relative;
+display:inline-block;
+}
+
+.loginIcon {
+position:absolute;
+right:5px;
+top:3px;
+cursor:pointer;
+}
+
+
+
+
+
