@@ -3,7 +3,7 @@
 <head>
    <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>WeeBrite - Login</title>
+   <title>WeeBrite - Sign Up</title>
    <link rel="stylesheet" href="/css/login.css">
 </head>
 <body>
@@ -25,7 +25,7 @@
        </nav>
    </div>
 
-   <h1>Login</h1>
+   <h1>Sign Up</h1>
   
    <div class="container">
        <div class="login-box">
@@ -34,32 +34,40 @@
              <div class="error"><%= message %></div>
            <% } %>
 
-           <form class="login-form" method="POST" action="/login">
+           <form class="login-form" method="POST" action="/signup" onsubmit="return validatePasswords()">
                <div class="input-group">
                    <label for="username">Username</label>
-                   <input type="text" id="username" name="username" placeholder="Enter your username" required>
+                   <input type="text" id="username" name="username" placeholder="Choose a username" required>
                </div>
               
                <div class="input-group">
                    <label for="password">Password</label>
-                   <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                   <input type="password" id="password" name="password" placeholder="Choose a password" required>
                </div>
               
-               <button type="submit" class="login-btn">Login</button>
+               <div class="input-group">
+                   <label for="confirmPassword">Confirm Password</label>
+                   <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Re-enter password" required>
+               </div>
               
-               <button type="button" class="signup-btn" onclick="location.href='/signup'">Sign Up</button>
+               <button type="submit" class="login-btn">Sign Up</button>
+              
+               <button type="button" class="signup-btn" onclick="location.href='/login'">Already have an account? Login</button>
            </form>
        </div>
    </div>
-</body>
-</html>
+
 <script>
-const eyeIcon = document.querySelector("#eyeIcon");;
-eyeIcon.addEventListener("click", () => {
-const isHidden = pwd.type === "password";
-pwd.type = (isHidden)? "text" : "password";
-eyeIcon.classList.toggle("bi-eye", !isHidden);
-eyeIcon.classList.toggle("bi-eye-slash", isHidden);
-});
+function validatePasswords() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (password !== confirmPassword) {
+        alert('Passwords do not match. Please try again.');
+        return false;
+    }
+    return true;
+}
 </script>
+</body>
 </html>
