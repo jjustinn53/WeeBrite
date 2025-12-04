@@ -41,8 +41,10 @@ app.use((req, res, next) => {
 // root route
 app.get("/", async (req, res) => {
   try {
-    // Fetch 3 random featured characters
-    let sql = `SELECT * FROM characters ORDER BY RAND() LIMIT 3`;
+    // Fetch random featured characters
+    let sql = `SELECT * FROM characters WHERE anime IN (
+      SELECT anime FROM characters GROUP BY anime ORDER BY RAND() LIMIT 3
+    ) ORDER BY RAND() LIMIT 3`;
     const [featuredCharacters] = await pool.query(sql);
     
     res.render("home.ejs", { 
