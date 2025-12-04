@@ -74,6 +74,40 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// Signup Routes
+app.get("/signup", async (req, res) => {
+  res.render("signup", { message: "" });
+});
+
+app.post("/signup", async (req, res) => {
+  let username = req.body.username;
+  let password = req.body.password;
+
+  // Check if username already exists
+  let checkSql = `SELECT * FROM users WHERE username = ?`;
+  const [existing] = await pool.query(checkSql, [username]);
+
+  if (existing.length > 0) {
+    res.render("signup", { message: "Username already exists. Please choose another." });
+    return;
+  }
+
+  // Hash the password
+  const saltRounds = 10;
+  const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+  // Insert new user
+  let insertSql = `INSERT INTO users (username, password) VALUES (?, ?)`;
+  await pool.query(insertSql, [username, hashedPassword]);
+
+  // Log the user in automatically
+  const [newUser] = await pool.query(checkSql, [username]);
+  req.session.authenticated = true;
+  req.session.userID = newUser[0].userID;
+  
+  res.redirect("/");
+});
+
 // Logout Route
 app.get("/logout", async (req, res) => {
   req.session.destroy();
