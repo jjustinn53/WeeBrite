@@ -166,6 +166,52 @@ app.get("/logout", async (req, res) => {
   res.redirect("/");
 });
 
+// Update Password Routes
+app.get("/update-password", async (req, res) => {
+  res.render("updatePassword.ejs", { message: "", authenticated: req.session?.authenticated || false });
+});
+
+app.post("/update-password", async (req, res) => {
+  let username = req.body.username;
+  let currentPassword = req.body.currentPassword;
+  let newPassword = req.body.newPassword;
+
+  // Check if user exists
+  let sql = `SELECT * FROM users WHERE username = ?`;
+  const [data] = await pool.query(sql, [username]);
+
+  if (data.length === 0) {
+    res.render("updatePassword.ejs", { 
+      message: "Username not found.",
+      authenticated: req.session?.authenticated || false 
+    });
+    return;
+  }
+
+  // Verify current password
+  const passHash = data[0].password;
+  const match = await bcrypt.compare(currentPassword, passHash);
+
+  if (!match) {
+    res.render("updatePassword.ejs", { 
+      message: "Current password is incorrect.",
+      authenticated: req.session?.authenticated || false 
+    });
+    return;
+  }
+
+  // Hash the new password
+  const saltRounds = 10;
+  const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+  // Update password in database
+  let updateSql = `UPDATE users SET password = ? WHERE username = ?`;
+  await pool.query(updateSql, [hashedPassword, username]);
+
+  // Redirect to login with success message
+  res.render("login.ejs", { message: "Password updated successfully! Please login with your new password.", success: true });
+});
+
 app.get("/quiz", isAuthenticated, async (req, res) => {
   let questions = [];
   let correctIDs = [];
