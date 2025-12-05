@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results - WeeBrite</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Boldonse&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/login.css">
+    <style>
+        .search-results-container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 25px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-results-container h1 {
+            color: rgb(243, 108, 33);
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .search-results-container p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            display: inline-block;
+            background: rgb(243, 108, 33);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgb(255, 153, 85);
+            transform: translateY(-2px);
+        }
+
+        .characters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .character-card {
+            background: linear-gradient(135deg, rgb(243, 108, 33) 0%, rgb(255, 153, 85) 100%);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .character-card h3 {
+            font-size: 14px;
+            margin: 0 0 8px 0;
+            word-break: break-word;
+        }
+
+        .character-card p {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+        }
+
+        .no-results p {
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body style="padding-top: 120px;">
+    <%- include('partials/header.ejs') %>
+
+    <main class="search-results-container">
+        <a href="/" class="back-btn">← Back to Home</a>
+
+        <h1>Search Results</h1>
+        <p>Results for: <strong><%= searchQuery %></strong></p>
+
+        <% if (error) { %>
+            <div style="color: red; padding: 15px; background: #ffe6e6; border-radius: 8px;">
+                <%= error %>
+            </div>
+        <% } else if (results.length > 0) { %>
+            <p style="color: #666; margin-bottom: 15px;">Found <%= results.length %> character(s)</p>
+
+            <div class="characters-grid">
+                <% results.forEach(character => { %>
+                    <div class="character-card">
+                        <h3><%= character.name %></h3>
+                        <p>ID: <%= character.character_id %></p>
+                    </div>
+                <% }); %>
+            </div>
+        <% } else { %>
+            <div class="no-results">
+                <p>No characters found matching "<%= searchQuery %>"</p>
+                <p>Try searching with different keywords</p>
+            </div>
+        <% } %>
+    </main>
+
+    <%- include('partials/footer.ejs') %>
+
+</body>
+</html>

@@ -35,12 +35,50 @@ const pool = mysql.createPool({
 // Send authenticated data to browser
 app.use((req, res, next) => {
   res.locals.authenticated = req.session?.authenticated || false;
+  res.locals.error = null;
   next();
 });
 
 // root route
-app.get("/", (req, res) => {
-  res.render("home.ejs");
+app.get("/", async (req, res) => {
+  try {
+    // Fetch random featured characters
+    let sql = `SELECT * FROM characters WHERE anime IN (
+      SELECT anime FROM characters GROUP BY anime ORDER BY RAND() LIMIT 3
+    ) ORDER BY RAND() LIMIT 3`;
+    const [featuredCharacters] = await pool.query(sql);
+    
+    res.render("home.ejs", { 
+      featuredCharacters,
+      authenticated: req.session?.authenticated || false 
+    });
+  } catch (error) {
+    console.error("Error fetching featured characters:", error);
+    res.render("home.ejs", { 
+      featuredCharacters: [],
+      authenticated: req.session?.authenticated || false 
+    });
+  }
+});
+
+// Search Characters Route
+app.get("/search", async (req, res) => {
+  const searchQuery = req.query.q;
+
+  if (!searchQuery || searchQuery.trim() === "") {
+    res.redirect("/");
+    return;
+  }
+
+  try {
+    let sql = `SELECT * FROM characters WHERE name LIKE ? OR character_id LIKE ?`;
+    const [results] = await pool.query(sql, [`%${searchQuery}%`, `%${searchQuery}%`]);
+
+    res.render("search-results.ejs", { results, searchQuery, error: null });
+  } catch (error) {
+    console.error("Search error:", error);
+    res.render("search-results.ejs", { results: [], searchQuery, error: "Error searching characters" });
+  }
 });
 
 app.get('/api/random-anime', async (req, res) => {
@@ -86,10 +124,58 @@ app.post("/login", async (req, res) => {
   if (match) {
     req.session.authenticated = true;
     req.session.userID = data[0].userID;
-    res.render("home", { authenticated: true });
+    
+    try {
+      let sql = `SELECT * FROM characters ORDER BY RAND() LIMIT 3`;
+      const [featuredCharacters] = await pool.query(sql);
+      res.render("home.ejs", { 
+        authenticated: true,
+        featuredCharacters 
+      });
+    } catch (error) {
+      console.error("Error fetching featured characters:", error);
+      res.render("home.ejs", { 
+        authenticated: true,
+        featuredCharacters: [] 
+      });
+    }
   } else {
-    res.render("login", { message: "Invalid username or password." });
+    res.render("login.ejs", { message: "Invalid username or password." });
   }
+});
+
+// Signup Routes
+app.get("/signup", async (req, res) => {
+  res.render("signup.ejs", { message: "" });
+});
+
+app.post("/signup", async (req, res) => {
+  let username = req.body.username;
+  let password = req.body.password;
+
+  // Check if username already exists
+  let checkSql = `SELECT * FROM users WHERE username = ?`;
+  const [existing] = await pool.query(checkSql, [username]);
+
+  if (existing.length > 0) {
+    res.render("signup.ejs", { message: "Username already exists. Please choose another." });
+    return;
+  }
+
+  // Hash the password
+  const saltRounds = 10;
+  const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+  // Insert new user
+  let insertSql = `INSERT INTO users (username, password) VALUES (?, ?)`;
+  await pool.query(insertSql, [username, hashedPassword]);
+
+  // Log the user in automatically
+  const [newUser] = await pool.query(checkSql, [username]);
+  req.session.authenticated = true;
+  req.session.userID = newUser[0].userID;
+  
+  res.redirect("/");
 });
 
 // Logout Route
@@ -224,11 +310,15 @@ app.post('/squad/save', isAuthenticated, async (req, res) => {
 function isAuthenticated(req, res, next) {
   if (!req.session.authenticated) {
     if (req.url !== "/login") {
-      res.render("login", { message: "Please login to continue." });
+      res.render("login.ejs", { message: "Please login to continue." });
     } else {
-      res.render("login", { message: "" });
+      res.render("login.ejs", { message: "" });
     }
   } else {
     next();
   }
 }
+
+app.listen(3000, () => {
+  console.log("server started");
+});

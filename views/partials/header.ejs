@@ -1,19 +1,16 @@
-    <header class="content">
-        <div class="left-section">
-            <a href="/">
-                <img src="/images/WeeBrite.png" width="225px" alt="Logo">
-            </a>
-        </div>
+    <div class="banner">
+        <a href="/" class="banner-logo-link">
+            <img src="/images/WeeBrite.png" alt="WeeBrite Logo" class="banner-logo">
+        </a>
 
-        <nav class="right-section">
-            <a href="/" class="nav-button">Home</a>
-            <a href="/quiz" class="nav-button">Play</a>
-            <a href="/squad" class="nav-button">Squad Builder</a>
+        <nav class="banner-nav">
+            <a href="/" class="nav-btn">Home</a>
+            <a href="/quiz" class="nav-btn">Play</a>
+            <a href="/squad" class="nav-btn">Squad Builder</a>
             <% if (!authenticated) { %>
-                <a href="/login" class="nav-button">Login</a>
+                <a href="/login" class="nav-btn">Login</a>
             <% } else { %>
-                <a href="/logout" class="nav-button">Logout</a>
+                <a href="/logout" class="nav-btn">Logout</a>
             <% } %>
         </nav>
-
-    </header>
+    </div>
