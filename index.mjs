@@ -4,6 +4,7 @@ import mysql from "mysql2/promise";
 import bcrypt from "bcrypt";
 import session from "express-session";
 import _ from "underscore";
+import anyanime from "anyanime";
 
 const app = express();
 app.set("view engine", "ejs");
@@ -77,6 +78,23 @@ app.get("/search", async (req, res) => {
   } catch (error) {
     console.error("Search error:", error);
     res.render("search-results.ejs", { results: [], searchQuery, error: "Error searching characters" });
+  }
+});
+
+app.get('/api/random-anime', async (req, res) => {
+  try {
+    const images = await anyanime.getAnime({ type: 'gif', number: 1 });
+    // The package returns an array; we'll use the first element.
+    const imageUrl = Array.isArray(images) ? images[0] : null;
+
+    if (!imageUrl) {
+      return res.status(500).json({ error: 'No image returned from anyanime' });
+    }
+
+    res.json({ imageUrl });
+  } catch (err) {
+    console.error('Error using anyanime package:', err);
+    res.status(500).json({ error: 'Failed to fetch anime image' });
   }
 });
 
