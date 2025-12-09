@@ -384,6 +384,37 @@ app.post("/squad/save", isAuthenticated, async (req, res) => {
   }
 });
 
+//profile route
+app.get("/profile", isAuthenticated, async (req, res) => {
+  let sql = `SELECT bio, birth 
+            FROM users
+            WHERE userID = ?;`
+
+  const [userInfo] = await pool.query(sql, [req.session.userID]);
+  res.render("profile.ejs", {userInfo});
+});
+
+app.post("/profile/save", isAuthenticated, async (req, res) => {
+  const user = req.session.userID;
+  const { bio, birthday } = req.body;
+
+  if (!user || !bio || !birthday) {
+    return res.status(400).json({ success: false});
+  }
+
+  try {
+    let sql = `UPDATE users SET bio = ?, birth = ? WHERE userID = ?`;
+    await pool.query(sql, [bio, birthday, user]);
+
+    console.log("Profile updated successfully.");
+    res.json({ success: true, message: "Profile updated successfully." });
+    res.redirect('profile')
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ success: false, message: "Error updating profile." });
+  }
+});
+
 //Middleware
 function isAuthenticated(req, res, next) {
   if (!req.session.authenticated) {
