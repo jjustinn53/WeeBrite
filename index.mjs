@@ -405,8 +405,7 @@ app.post("/profile/save", isAuthenticated, async (req, res) => {
     await pool.query(sql, [bio, birthday, user]);
 
     console.log("Profile updated successfully.");
-    res.json({ success: true, message: "Profile updated successfully." });
-    res.redirect('profile')
+    res.redirect('/profile')
   } catch (error) {
     console.error("Error updating profile:", error);
     res.status(500).json({ success: false, message: "Error updating profile." });
