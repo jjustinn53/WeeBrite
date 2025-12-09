@@ -1,5 +1,5 @@
 import express from "express";
-import animeQuotes from "anime-quotes";
+import animeQuotes from "./custom-packages/anime-quotes/dist/index.js";
 import mysql from "mysql2/promise";
 import bcrypt from "bcrypt";
 import session from "express-session";
