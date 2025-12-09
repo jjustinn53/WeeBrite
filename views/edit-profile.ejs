@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Edit Profile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Boldonse&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/quiz.css">
+</head>
+<body>
+    <%- include('partials/header.ejs') %>
+
+<body>
+  <div class="card">
+    <a href="/" class="back-link">← Back to home</a>
+
+    <h1>Edit Profile</h1>
+    <p class="subtitle">
+      Update your account details. Changes are tied to your current session.
+    </p>
+
+    <% if (message && message.length > 0) { %>
+      <div class="flash success"><%= message %></div>
+    <% } %>
+
+    <!-- If you ever want to show errors, you can add a similar flash.error block -->
+
+    <form action="/edit-profile" method="POST">
+      <div class="field">
+        <label for="username" class="required">Username</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="Your username"
+          value="<%= (user && user.username) ? user.username : '' %>"
+          required
+        />
+        <div class="helper">
+          This is what you’ll use to log in.
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="password">New Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Leave blank to keep current password"
+        />
+        <div class="helper">
+          Only fill this in if you want to change your password.
+        </div>
+      </div>
+
+      <div class="field full-width">
+        <label for="bio">Bio</label>
+        <textarea
+          id="bio"
+          name="bio"
+          placeholder="Tell us a bit about yourself..."
+        ><%= (user && user.bio) ? user.bio : '' %></textarea>
+      </div>
+
+      <div class="actions">
+        <a href="/" class="btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">
+          Cancel
+        </a>
+        <button type="submit" class="btn-primary">
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+  <%- include('partials/footer.ejs') %>
+</body>
+</html>
