@@ -342,8 +342,6 @@ app.get("/squad", isAuthenticated, async (req, res) => {
             WHERE s.userID = ?`;
   const [cur_squad] = await pool.query(squad_sql, [req.session.userID]);
 
-  console.log("UNLOCK:", unlocked);
-
   res.render("squad.ejs", { unlocked, cur_squad });
 });
 
