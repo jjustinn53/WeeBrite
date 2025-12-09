@@ -1,5 +1,5 @@
 {
-  "name": "@kunwarji/anime-quotes",
+  "name": "anime-quotes",
   "version": "1.0.0",
   "description": "NPM package for getting quotes.",
   "main": "dist/index.js",
