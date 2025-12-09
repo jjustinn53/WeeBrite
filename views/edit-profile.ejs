@@ -4,259 +4,81 @@
   <meta charset="UTF-8" />
   <title>Edit Profile</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        sans-serif;
-      background: #0f172a;
-      color: #e5e7eb;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
-      padding: 2rem;
-    }
-    .card {
-      background: #020617;
-      border-radius: 16px;
-      padding: 1.5rem 1.75rem;
-      width: 100%;
-      max-width: 700px;
-      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.8);
-      border: 1px solid rgba(148, 163, 184, 0.35);
-    }
-    h1 {
-      margin: 0 0 0.5rem;
-      font-size: 1.4rem;
-    }
-    p.subtitle {
-      margin: 0 0 1.5rem;
-      color: #9ca3af;
-      font-size: 0.9rem;
-    }
-    form {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1rem 1.5rem;
-    }
-    @media (max-width: 640px) {
-      form {
-        grid-template-columns: 1fr;
-      }
-    }
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-    label {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #9ca3af;
-    }
-    .required::after {
-      content: " *";
-      color: #38bdf8;
-    }
-    input, textarea {
-      background: #020617;
-      border-radius: 8px;
-      border: 1px solid rgba(148, 163, 184, 0.35);
-      padding: 0.5rem 0.6rem;
-      color: #e5e7eb;
-      font-size: 0.9rem;
-      outline: none;
-    }
-    input:focus, textarea:focus {
-      border-color: #38bdf8;
-      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4);
-    }
-    textarea {
-      min-height: 80px;
-      grid-column: 1 / -1;
-    }
-    .full-width {
-      grid-column: 1 / -1;
-    }
-    .actions {
-      grid-column: 1 / -1;
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.75rem;
-      margin-top: 0.75rem;
-    }
-    button {
-      border-radius: 999px;
-      border: none;
-      padding: 0.5rem 1.2rem;
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-    }
-    .btn-secondary {
-      background: transparent;
-      border: 1px solid rgba(148, 163, 184, 0.6);
-      color: #e5e7eb;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
-      color: #020617;
-      box-shadow: 0 10px 22px rgba(56, 189, 248, 0.4);
-    }
-    .flash {
-      margin-bottom: 0.75rem;
-      font-size: 0.85rem;
-    }
-    .flash.success { color: #4ade80; }
-    .flash.error { color: #f97373; }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Boldonse&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/quiz.css">
 </head>
 <body>
     <%- include('partials/header.ejs') %>
 
+<body>
   <div class="card">
+    <a href="/" class="back-link">← Back to home</a>
+
     <h1>Edit Profile</h1>
-    <p class="subtitle">Loaded based on your session (no user ID in the URL).</p>
+    <p class="subtitle">
+      Update your account details. Changes are tied to your current session.
+    </p>
 
-    <div id="flash" class="flash" style="display:none;"></div>
+    <% if (message && message.length > 0) { %>
+      <div class="flash success"><%= message %></div>
+    <% } %>
 
-    <form id="editProfileForm">
+    <!-- If you ever want to show errors, you can add a similar flash.error block -->
+
+    <form action="/edit-profile" method="POST">
       <div class="field">
-        <label class="required" for="firstName">First Name</label>
-        <input id="firstName" name="firstName" type="text" required />
+        <label for="username" class="required">Username</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="Your username"
+          value="<%= (user && user.username) ? user.username : '' %>"
+          required
+        />
+        <div class="helper">
+          This is what you’ll use to log in.
+        </div>
       </div>
 
       <div class="field">
-        <label class="required" for="lastName">Last Name</label>
-        <input id="lastName" name="lastName" type="text" required />
-      </div>
-
-      <div class="field">
-        <label class="required" for="username">Username</label>
-        <input id="username" name="username" type="text" required />
-      </div>
-
-      <div class="field">
-        <label class="required" for="email">Email</label>
-        <input id="email" name="email" type="email" required />
-      </div>
-
-      <div class="field">
-        <label for="phone">Phone</label>
-        <input id="phone" name="phone" type="tel" />
-      </div>
-
-      <div class="field">
-        <label for="location">Location</label>
-        <input id="location" name="location" type="text" />
+        <label for="password">New Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Leave blank to keep current password"
+        />
+        <div class="helper">
+          Only fill this in if you want to change your password.
+        </div>
       </div>
 
       <div class="field full-width">
         <label for="bio">Bio</label>
-        <textarea id="bio" name="bio"></textarea>
-      </div>
-
-      <div class="field full-width">
-        <label for="website">Website</label>
-        <input id="website" name="website" type="text" />
+        <textarea
+          id="bio"
+          name="bio"
+          placeholder="Tell us a bit about yourself..."
+        ><%= (user && user.bio) ? user.bio : '' %></textarea>
       </div>
 
       <div class="actions">
-        <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
-        <button type="submit" class="btn-primary">Save Changes</button>
+        <a href="/" class="btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">
+          Cancel
+        </a>
+        <button type="submit" class="btn-primary">
+          Save Changes
+        </button>
       </div>
     </form>
   </div>
-
-  <script type="module" src="edit-profile.mjs"></script>
   <%- include('partials/footer.ejs') %>
 </body>
-<script>
-    // public/edit-profile.mjs
-
-const form = document.getElementById('editProfileForm');
-const flash = document.getElementById('flash');
-const cancelBtn = document.getElementById('cancelBtn');
-
-function showFlash(message, type = 'success') {
-  flash.textContent = message;
-  flash.className = `flash ${type}`;
-  flash.style.display = 'block';
-}
-
-async function loadProfile() {
-  try {
-    const res = await fetch('/api/me', {
-      credentials: 'include'
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || `Failed to load profile (status ${res.status})`);
-    }
-
-    const user = await res.json();
-
-    // Populate form fields
-    form.firstName.value = user.firstName || '';
-    form.lastName.value = user.lastName || '';
-    form.username.value = user.username || '';
-    form.email.value = user.email || '';
-    form.phone.value = user.phone || '';
-    form.location.value = user.location || '';
-    form.bio.value = user.bio || '';
-    form.website.value = user.website || '';
-
-  } catch (err) {
-    console.error(err);
-    showFlash(err.message, 'error');
-  }
-}
-
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-
-  const payload = {
-    firstName: form.firstName.value.trim(),
-    lastName: form.lastName.value.trim(),
-    username: form.username.value.trim(),
-    email: form.email.value.trim(),
-    phone: form.phone.value.trim(),
-    location: form.location.value.trim(),
-    bio: form.bio.value.trim(),
-    website: form.website.value.trim()
-  };
-
-  try {
-    const res = await fetch('/api/me', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      throw new Error(data.error || 'Failed to save profile.');
-    }
-
-    showFlash(data.message || 'Profile updated successfully.', 'success');
-  } catch (err) {
-    console.error(err);
-    showFlash(err.message, 'error');
-  }
-});
-
-cancelBtn.addEventListener('click', () => {
-  if (confirm('Discard changes?')) {
-    loadProfile(); // reload from server/session
-  }
-});
-
-// On page load: get profile data based on session
-loadProfile();
-
-</script>
 </html>

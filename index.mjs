@@ -103,6 +103,49 @@ app.get("/login", async (req, res) => {
   res.render("login.ejs", { message: "" });
 });
 
+app.get("/edit-profile", isAuthenticated, async (req, res) => {
+  let sql = `SELECT * FROM users WHERE userID = ?`;
+  const [data] = await pool.query(sql, [req.session.userID]);
+
+  if (data.length > 0) {
+    const user = data[0];
+    res.render("edit-profile.ejs", { user, message: ""});
+  } else {
+    res.redirect("/");
+  }
+});
+
+app.post("/edit-profile", isAuthenticated, async (req, res) => {
+  let { username, password, bio } = req.body;
+
+  let updateFields = [];
+  let params = [];
+
+  if (username) {
+    updateFields.push("username = ?");
+    params.push(username);
+  }
+  if (bio) {
+    updateFields.push("bio = ?");
+    params.push(bio);
+  }
+  if (password) {
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    updateFields.push("password = ?");
+    params.push(hashedPassword);
+  }
+
+  if (updateFields.length > 0) {
+    let sql = `UPDATE users SET ${updateFields.join(", ")} WHERE userID = ?`;
+    params.push(req.session.userID);
+
+    await pool.query(sql, params);
+  }
+
+  res.render("edit-profile.ejs", { user: req.body, message: "Profile updated successfully." });
+});
+
 app.post("/login", async (req, res) => {
   let username = req.body.username;
   let password = req.body.password;
