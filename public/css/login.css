@@ -233,6 +233,16 @@ body > h1 {
     font-weight: 600;
 }
 
+.success {
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: #e6ffe6;
+    color: #006400;
+    border: 2px solid #b3ffb3;
+    font-weight: 600;
+}
+
 /* Banner Navigation Styles */
 .banner-nav {
     display: flex;

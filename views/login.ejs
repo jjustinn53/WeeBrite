@@ -31,7 +31,7 @@
        <div class="login-box">
 
            <% if (typeof message !== 'undefined' && message) { %>
-             <div class="error"><%= message %></div>
+             <div class="<%= (typeof success !== 'undefined' && success) ? 'success' : 'error' %>"><%= message %></div>
            <% } %>
 
            <form class="login-form" method="POST" action="/login">
