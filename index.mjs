@@ -1,9 +1,10 @@
 import express from "express";
-import animeQuotes from "@kunwarji/anime-quotes";
+import animeQuotes from "./custom-packages/anime-quotes/dist/index.js";
 import mysql from "mysql2/promise";
 import bcrypt from "bcrypt";
 import session from "express-session";
 import _ from "underscore";
+import anyanime from "anyanime";
 
 const app = express();
 app.set("view engine", "ejs");
@@ -42,20 +43,24 @@ app.use((req, res, next) => {
 app.get("/", async (req, res) => {
   try {
     // Fetch random featured characters
-    let sql = `SELECT * FROM characters WHERE anime IN (
-      SELECT anime FROM characters GROUP BY anime ORDER BY RAND() LIMIT 3
-    ) ORDER BY RAND() LIMIT 3`;
+    let sql = `SELECT * FROM ( 
+    SELECT DISTINCT anime, character_id, name, image_url
+    FROM characters
+    ORDER BY RAND()
+    ) AS distinct_anime_characters
+     GROUP BY anime
+     LIMIT 3;`;
     const [featuredCharacters] = await pool.query(sql);
-    
-    res.render("home.ejs", { 
+
+    res.render("home.ejs", {
       featuredCharacters,
-      authenticated: req.session?.authenticated || false 
+      authenticated: req.session?.authenticated || false,
     });
   } catch (error) {
     console.error("Error fetching featured characters:", error);
-    res.render("home.ejs", { 
+    res.render("home.ejs", {
       featuredCharacters: [],
-      authenticated: req.session?.authenticated || false 
+      authenticated: req.session?.authenticated || false,
     });
   }
 });
@@ -71,18 +76,85 @@ app.get("/search", async (req, res) => {
 
   try {
     let sql = `SELECT * FROM characters WHERE name LIKE ? OR character_id LIKE ?`;
-    const [results] = await pool.query(sql, [`%${searchQuery}%`, `%${searchQuery}%`]);
+    const [results] = await pool.query(sql, [
+      `%${searchQuery}%`,
+      `%${searchQuery}%`,
+    ]);
 
     res.render("search-results.ejs", { results, searchQuery, error: null });
   } catch (error) {
     console.error("Search error:", error);
-    res.render("search-results.ejs", { results: [], searchQuery, error: "Error searching characters" });
+    res.render("search-results.ejs", {
+      results: [],
+      searchQuery,
+      error: "Error searching characters",
+    });
+  }
+});
+
+app.get("/api/random-anime", async (req, res) => {
+  try {
+    const images = await anyanime.getAnime({ type: "gif", number: 1 });
+    // The package returns an array; we'll use the first element.
+    const imageUrl = Array.isArray(images) ? images[0] : null;
+
+    if (!imageUrl) {
+      return res.status(500).json({ error: "No image returned from anyanime" });
+    }
+
+    res.json({ imageUrl });
+  } catch (err) {
+    console.error("Error using anyanime package:", err);
+    res.status(500).json({ error: "Failed to fetch anime image" });
   }
 });
 
 //login route
 app.get("/login", async (req, res) => {
   res.render("login.ejs", { message: "" });
+});
+
+app.get("/edit-profile", isAuthenticated, async (req, res) => {
+  let sql = `SELECT * FROM users WHERE userID = ?`;
+  const [data] = await pool.query(sql, [req.session.userID]);
+
+  if (data.length > 0) {
+    const user = data[0];
+    res.render("edit-profile.ejs", { user, message: ""});
+  } else {
+    res.redirect("/");
+  }
+});
+
+app.post("/edit-profile", isAuthenticated, async (req, res) => {
+  let { username, password, bio } = req.body;
+
+  let updateFields = [];
+  let params = [];
+
+  if (username) {
+    updateFields.push("username = ?");
+    params.push(username);
+  }
+  if (bio) {
+    updateFields.push("bio = ?");
+    params.push(bio);
+  }
+  if (password) {
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    updateFields.push("password = ?");
+    params.push(hashedPassword);
+  }
+
+  if (updateFields.length > 0) {
+    let sql = `UPDATE users SET ${updateFields.join(", ")} WHERE userID = ?`;
+    params.push(req.session.userID);
+
+    await pool.query(sql, params);
+  }
+
+  res.render("edit-profile.ejs", { user: req.body, message: "Profile updated successfully." });
 });
 
 app.post("/login", async (req, res) => {
@@ -106,19 +178,19 @@ app.post("/login", async (req, res) => {
   if (match) {
     req.session.authenticated = true;
     req.session.userID = data[0].userID;
-    
+
     try {
       let sql = `SELECT * FROM characters ORDER BY RAND() LIMIT 3`;
       const [featuredCharacters] = await pool.query(sql);
-      res.render("home.ejs", { 
+      res.render("home.ejs", {
         authenticated: true,
-        featuredCharacters 
+        featuredCharacters,
       });
     } catch (error) {
       console.error("Error fetching featured characters:", error);
-      res.render("home.ejs", { 
+      res.render("home.ejs", {
         authenticated: true,
-        featuredCharacters: [] 
+        featuredCharacters: [],
       });
     }
   } else {
@@ -140,7 +212,9 @@ app.post("/signup", async (req, res) => {
   const [existing] = await pool.query(checkSql, [username]);
 
   if (existing.length > 0) {
-    res.render("signup.ejs", { message: "Username already exists. Please choose another." });
+    res.render("signup.ejs", {
+      message: "Username already exists. Please choose another.",
+    });
     return;
   }
 
@@ -156,7 +230,7 @@ app.post("/signup", async (req, res) => {
   const [newUser] = await pool.query(checkSql, [username]);
   req.session.authenticated = true;
   req.session.userID = newUser[0].userID;
-  
+
   res.redirect("/");
 });
 
@@ -222,82 +296,99 @@ app.get("/quiz", isAuthenticated, async (req, res) => {
               AND u.userID = ?
               WHERE (u.userID IS NULL OR u.unlocked = 0)`;
 
-   if (correctIDs.length > 0) {
-    cor_sql += ` AND c.character_id NOT IN (${correctIDs.map(() => '?').join(',')})`;
-   }
-   
-   cor_sql += ` ORDER BY RAND() LIMIT 1;`;
+    if (correctIDs.length > 0) {
+      cor_sql += ` AND c.character_id NOT IN (${correctIDs
+        .map(() => "?")
+        .join(",")})`;
+    }
 
-    const [correct] = await pool.query(cor_sql, [req.session.userID, ...correctIDs]);
+    cor_sql += ` ORDER BY RAND() LIMIT 1;`;
 
+    const [correct] = await pool.query(cor_sql, [
+      req.session.userID,
+      ...correctIDs,
+    ]);
 
-    if(correct.length == 0) {
+    if (correct.length == 0) {
       break;
-    } 
-    correctIDs.push(correct[0].character_id)
+    }
+    correctIDs.push(correct[0].character_id);
 
     let [firstName] = correct[0].name.split(" ");
     let quote = animeQuotes.randomQuoteByCharacter(firstName);
-  
+
     let in_sql = `SELECT * FROM characters WHERE character_id NOT IN (?) ORDER BY RAND() LIMIT 3`;
     const [incorrect] = await pool.query(in_sql, [correct[0].character_id]);
 
     let options = [
-            {name: incorrect[0].name, correct: false, character_id: incorrect[0].character_id},
-            {name: incorrect[1].name, correct: false, character_id: incorrect[1].character_id},
-            {name: incorrect[2].name, correct: false, character_id: incorrect[2].character_id},
-            {name: correct[0].name, correct: true, character_id: correct[0].character_id, image: correct[0].image_url}
-         ]
-   let shuffled = _.shuffle(options)
-    questions.push(
       {
-         question: quote.quote,
-         answers: shuffled
-      }
-    )
+        name: incorrect[0].name,
+        correct: false,
+        character_id: incorrect[0].character_id,
+      },
+      {
+        name: incorrect[1].name,
+        correct: false,
+        character_id: incorrect[1].character_id,
+      },
+      {
+        name: incorrect[2].name,
+        correct: false,
+        character_id: incorrect[2].character_id,
+      },
+      {
+        name: correct[0].name,
+        correct: true,
+        character_id: correct[0].character_id,
+        image: correct[0].image_url,
+      },
+    ];
+    let shuffled = _.shuffle(options);
+    questions.push({
+      question: quote.quote,
+      answers: shuffled,
+    });
   }
 
   res.render("quiz.ejs", { questions });
 });
 
 // Character Unlock Route
-app.post('/quiz/unlocked', isAuthenticated, async (req, res) => {
-   const user = req.session.userID;
-   const { unlocked } = req.body;
+app.post("/quiz/unlocked", isAuthenticated, async (req, res) => {
+  const user = req.session.userID;
+  const { unlocked } = req.body;
 
-   if(!user || !unlocked) {
-      return res.json({ sucess: false })
-   }
+  if (!user || !unlocked) {
+    return res.json({ sucess: false });
+  }
 
-   try {
-      for (let character of unlocked) {
-         let sql = `INSERT INTO userUnlock(userID, character_id, unlocked)
+  try {
+    for (let character of unlocked) {
+      let sql = `INSERT INTO userUnlock(userID, character_id, unlocked)
                   VALUES (?, ?, 1)
-                  ON DUPLICATE KEY UPDATE unlocked = 1`
-         await pool.query(sql, [user, character]);
-      }
-      console.log("Successfully saved unlocked charactesr.")
-   } catch (error) {
-      console.log("Error saving characters: ", error)
-   }
+                  ON DUPLICATE KEY UPDATE unlocked = 1`;
+      await pool.query(sql, [user, character]);
+    }
+    console.log("Successfully saved unlocked charactesr.");
+  } catch (error) {
+    console.log("Error saving characters: ", error);
+  }
 });
 
 // Squad Builder Route
 app.get("/squad", isAuthenticated, async (req, res) => {
-   let sql = `SELECT * FROM characters c
+  let sql = `SELECT * FROM characters c
             LEFT JOIN userUnlock u ON c.character_id = u.character_id
             WHERE u.userID = ?`;
 
-   const [unlocked] = await pool.query(sql, [req.session.userID]);
+  const [unlocked] = await pool.query(sql, [req.session.userID]);
 
-   let squad_sql = `SELECT * FROM characters c
+  let squad_sql = `SELECT * FROM characters c
             INNER JOIN squad s ON s.character_id = c.character_id
-            WHERE s.userID = ?` 
-   const [cur_squad] = await pool.query(squad_sql, [req.session.userID])
+            WHERE s.userID = ?`;
+  const [cur_squad] = await pool.query(squad_sql, [req.session.userID]);
 
-   console.log('UNLOCK:', unlocked);
-
-  res.render("squad.ejs", {unlocked, cur_squad});
+  res.render("squad.ejs", { unlocked, cur_squad });
 });
 
 app.listen(3000, () => {
@@ -305,33 +396,66 @@ app.listen(3000, () => {
 });
 
 // Character Save Route
-app.post('/squad/save', isAuthenticated, async (req, res) => {
-   const user = req.session.userID;
-   console.log(user);
-   const { squad } = req.body;
+app.post("/squad/save", isAuthenticated, async (req, res) => {
+  const user = req.session.userID;
+  console.log(user);
+  const { squad } = req.body;
 
+  if (!user || !squad) {
+    return res.json({ sucess: false });
+  }
 
-   if(!user || !squad) {
-      return res.json({ sucess: false })
-   }
+  try {
+    if (squad.length > 0) {
+      await pool.query(
+        `DELETE FROM squad WHERE userID = ? AND character_id NOT IN (${squad
+          .map(() => "?")
+          .join(",")})`,
+        [user, ...squad]
+      );
 
-   try {
+      const values = squad.map((characterId) => [user, characterId]);
+      let sql = `INSERT IGNORE INTO squad(userID, character_id)
+                  VALUES ?`;
+      await pool.query(sql, [values]);
+    } else {
+      await pool.query(`DELETE FROM squad WHERE userID = ?`, [user]);
+    }
 
-      if(squad.length > 0) {
-         await pool.query(`DELETE FROM squad WHERE userID = ? AND character_id NOT IN (${squad.map(() => '?').join(',')})`, [user, ...squad])
-      
-         const values = squad.map((characterId) => [user, characterId]);
-         let sql = `INSERT IGNORE INTO squad(userID, character_id)
-                  VALUES ?`
-         await pool.query(sql, [values]);
-      } else {
-         await pool.query(`DELETE FROM squad WHERE userID = ?`, [user]);
-      }
+    console.log("Successfully saved squad.");
+  } catch (error) {
+    console.log("Error saving squad: ", error);
+  }
+});
 
-      console.log("Successfully saved squad.")
-   } catch (error) {
-      console.log("Error saving squad: ", error)
-   }
+//profile route
+app.get("/profile", isAuthenticated, async (req, res) => {
+  let sql = `SELECT bio, birth 
+            FROM users
+            WHERE userID = ?;`
+
+  const [userInfo] = await pool.query(sql, [req.session.userID]);
+  res.render("profile.ejs", {userInfo});
+});
+
+app.post("/profile/save", isAuthenticated, async (req, res) => {
+  const user = req.session.userID;
+  const { bio, birthday } = req.body;
+
+  if (!user || !bio || !birthday) {
+    return res.status(400).json({ success: false});
+  }
+
+  try {
+    let sql = `UPDATE users SET bio = ?, birth = ? WHERE userID = ?`;
+    await pool.query(sql, [bio, birthday, user]);
+
+    console.log("Profile updated successfully.");
+    res.redirect('/profile')
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ success: false, message: "Error updating profile." });
+  }
 });
 
 //Middleware

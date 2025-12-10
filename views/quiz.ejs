@@ -13,7 +13,7 @@
         rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/login.css">
-    <link rel="stylesheet" href="css/quiz.css">
+    <link rel="stylesheet" href="css/quiz.css?v=1.0">
 
 </head>
 
@@ -75,6 +75,7 @@
                     if (answer.correct) {
                         button.dataset.correct = answer.correct;
                         button.dataset.image = answer.image;
+                        console.log(answer.name);
                     }
 
                     button.addEventListener("click", selectAnswer)
